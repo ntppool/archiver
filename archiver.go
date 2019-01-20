@@ -1,25 +1,33 @@
 package archiver
 
-import "fmt"
+import (
+	"fmt"
 
-// Archiver is the interface definition for storing data points externally
-type Archiver interface {
-	BatchSizeMinMax() (int, int)
-	Store(ls []*LogScore) (int, error)
-	// Get(ServerID int) ([]LogScore, error)
-}
+	"github.com/ntppool/archiver/storage"
+	"github.com/ntppool/archiver/storage/fileavro"
+	"github.com/ntppool/archiver/storage/influxdb"
+)
 
 // SetupArchiver returns an Archiver type (mysql, influxdb, bigquery, ...)
-func SetupArchiver(name string, config string) (Archiver, error) {
+func SetupArchiver(name string, config string) (storage.Archiver, error) {
 	switch name {
 	// case "mysql":
 	case "influxdb":
-		ia, err := NewInfluxArchiver()
+		ia, err := influxdb.NewInfluxArchiver()
 		if err != nil {
 			return nil, err
 		}
 		return ia, nil
+	case "fileavro":
+		fa, err := fileavro.NewArchiver("avro-data")
+		if err != nil {
+			return nil, err
+		}
+		return fa, err
 	// case "bigquery":
+	// case "gcs":
+	// case "s3":
+	// case "clickhouse":
 	default:
 		return nil, fmt.Errorf("unknown archiver '%s'", name)
 	}

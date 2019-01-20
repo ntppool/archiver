@@ -1,4 +1,4 @@
-package archiver
+package influxdb
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/ntppool/archiver/logscore"
 
 	influx "github.com/influxdata/influxdb/client"
 )
@@ -60,7 +62,7 @@ func (a *InfluxArchiver) influxConn() (*influx.Client, error) {
 }
 
 // Store is for the Archiver interface
-func (a *InfluxArchiver) Store(logscores []*LogScore) (int, error) {
+func (a *InfluxArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 
 	log.Println("Running Influx batcher")
 
@@ -69,15 +71,9 @@ func (a *InfluxArchiver) Store(logscores []*LogScore) (int, error) {
 		// Tags:     map[string]string{"log": "geodns"},
 	}
 
-	done := false
-
 	delay := time.Second * 0
 
 	for _, ls := range logscores {
-
-		if done {
-			break
-		}
 
 		// fmt.Print("-")
 		point := influx.Point{}

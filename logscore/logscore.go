@@ -1,4 +1,4 @@
-package archiver
+package logscore
 
 import (
 	"database/sql/driver"
@@ -15,7 +15,7 @@ type LogScore struct {
 	Score     float64          `json:"sc" msgpack:"sc"`
 	Step      float64          `json:"st" msgpack:"st"`
 	Offset    *float64         `json:"of" msgpack:"of"`
-	Meta      logScoreMetadata `json:"attributes,omitempty"`
+	Meta      LogScoreMetadata `json:"attributes,omitempty"`
 }
 
 type LogScoreMetadata struct {
@@ -31,11 +31,11 @@ func (ls *LogScore) JSON() []byte {
 	return append(b, '\n')
 }
 
-func (m *logScoreMetadata) Value() (driver.Value, error) {
+func (m *LogScoreMetadata) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
-func (m *logScoreMetadata) Scan(src interface{}) error {
+func (m *LogScoreMetadata) Scan(src interface{}) error {
 	s, ok := src.([]byte)
 	if !ok {
 		return fmt.Errorf("invalid value for token: %v", src)

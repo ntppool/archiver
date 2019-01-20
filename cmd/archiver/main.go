@@ -8,6 +8,7 @@ import (
 
 	"github.com/ntppool/archiver"
 	"github.com/ntppool/archiver/db"
+	"github.com/ntppool/archiver/logscore"
 )
 
 func main() {
@@ -67,7 +68,7 @@ func main() {
 
 		// todo: where id > lastID ...
 		rows, err := db.DB.Query(
-			fmt.Sprintf(`select id,monitor_id,server_id,UNIX_TIMESTAMP(ts),score,step,offset,attributes
+			fmt.Sprintf(`select id,monitor_id,sexrver_id,UNIX_TIMESTAMP(ts),score,step,offset,attributes
 				from log_scores
 				where ts > 0
 				order by id
@@ -75,14 +76,14 @@ func main() {
 			maxSize,
 		)
 
-		logScores := []*archiver.LogScore{}
+		logScores := []*logscore.LogScore{}
 
 		for rows.Next() {
 
 			var monitorID sql.NullInt64
 			var offset sql.NullFloat64
 
-			ls := archiver.LogScore{}
+			ls := logscore.LogScore{}
 
 			// todo: add new meta data column
 
