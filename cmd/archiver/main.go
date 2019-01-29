@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("archive status: %s", err)
 	}
 
-	source := source.New("log_scores_archive")
+	source := source.New("log_scores")
 
 	for _, s := range status {
 		err := source.Process(s)

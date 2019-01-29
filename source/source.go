@@ -193,7 +193,7 @@ func (source *Source) checkAttributes() (bool, error) {
 
 	for _, c := range columns {
 		if c.Field == "attributes" {
-			return false, nil
+			return true, nil
 		}
 	}
 

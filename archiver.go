@@ -5,6 +5,7 @@ import (
 
 	"github.com/ntppool/archiver/storage"
 	"github.com/ntppool/archiver/storage/fileavro"
+	"github.com/ntppool/archiver/storage/gcsavro"
 	"github.com/ntppool/archiver/storage/influxdb"
 )
 
@@ -24,8 +25,9 @@ func SetupArchiver(name string, config string) (storage.Archiver, error) {
 			return nil, err
 		}
 		return fa, err
+	case "gcsavro":
+		return gcsavro.NewArchiver()
 	// case "bigquery":
-	// case "gcs":
 	// case "s3":
 	// case "clickhouse":
 	default:
