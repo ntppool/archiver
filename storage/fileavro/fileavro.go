@@ -16,6 +16,8 @@ type avroArchiver struct {
 	path string
 }
 
+const batchAppendSize = 50000
+
 // NewArchiver returns an archiver that stores data in avro files in the specified path
 func NewArchiver(path string) (storage.Archiver, error) {
 	a := &avroArchiver{path: path}
@@ -31,7 +33,7 @@ func NewArchiver(path string) (storage.Archiver, error) {
 
 // BatchSizeMinMax returns the minimum and maximum batch size for InfluxArchiver
 func (a *avroArchiver) BatchSizeMinMax() (int, int) {
-	return 10, 500000
+	return 1000, 1000000
 }
 
 // Store is for the Archiver interface
@@ -51,7 +53,7 @@ func (a *avroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 		  {"name": "score", "type": "float"},
 		  {"name": "step", "type": "float"},
 		  {"name": "offset", "type": ["null", "float"]},
-		  {"name": "leap", "type": "int"}
+		  {"name": "leap", "type": ["null", "int"]}
 		 ]
 	}`)
 	if err != nil {
@@ -86,10 +88,11 @@ func (a *avroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	}
 
 	queue := []interface{}{}
+	count := 0
 
 	for _, ls := range logscores {
 
-		fmt.Printf("ls: %+v\n", ls)
+		// fmt.Printf("ls: %+v\n", ls)
 
 		// // Convert native Go form to binary Avro data
 		// binary, err := codec.BinaryFromNative(nil, native)
@@ -105,6 +108,11 @@ func (a *avroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 			offset = goavro.Union("float", *ls.Offset)
 		}
 
+		var leap interface{}
+		if ls.Meta.Leap != 0 {
+			leap = goavro.Union("int", int(ls.Meta.Leap))
+		}
+
 		avromap := map[string]interface{}{
 			"id":        ls.ID,
 			"serverid":  ls.ServerID,
@@ -113,28 +121,23 @@ func (a *avroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 			"score":     ls.Score,
 			"step":      ls.Step,
 			"offset":    offset,
-			"leap":      ls.Meta.Leap,
+			"leap":      leap,
 		}
 
-		// Convert native Go form to textual Avro data
-		textual, err := codec.TextualFromNative(nil, avromap)
-		if err != nil {
-			return 0, fmt.Errorf("TextualFromNative: %s", err)
-		}
-		fmt.Printf("AVRO: %s\n", textual)
-
-		// binary, err := codec.BinaryFromNative(nil, avromap)
+		// textual, err := codec.TextualFromNative(nil, avromap)
 		// if err != nil {
-		// 	return 0, fmt.Errorf("BinaryFromNative: %s", err)
+		// 	return 0, fmt.Errorf("TextualFromNative: %s", err)
 		// }
+		// fmt.Printf("AVRO: %s\n", textual)
 
 		queue = append(queue, avromap)
 
-		if len(queue) > 500 {
+		if len(queue) > batchAppendSize {
 			err = w.Append(queue)
 			if err != nil {
-				return 0, fmt.Errorf("Append: %s", err)
+				return count, fmt.Errorf("Append: %s", err)
 			}
+			count = count + len(queue)
 			queue = []interface{}{}
 		}
 	}
@@ -142,8 +145,9 @@ func (a *avroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	if len(queue) > 0 {
 		err = w.Append(queue)
 		if err != nil {
-			return 0, fmt.Errorf("Append: %s", err)
+			return count, fmt.Errorf("Append: %s", err)
 		}
+		count = count + len(queue)
 		queue = []interface{}{}
 	}
 
@@ -151,5 +155,5 @@ func (a *avroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return 0, nil
+	return count, nil
 }

@@ -1,14 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/ntppool/archiver"
 	"github.com/ntppool/archiver/db"
-	"github.com/ntppool/archiver/logscore"
+	"github.com/ntppool/archiver/source"
+	"github.com/ntppool/archiver/storage"
 )
 
 func main() {
@@ -28,93 +27,19 @@ func main() {
 		os.Exit(2)
 	}
 
-	status, err := archiver.GetArchiveStatus()
+	status, err := storage.GetArchiveStatus()
 	if err != nil {
 		log.Fatalf("archive status: %s", err)
 	}
 
+	source := source.New("log_scores_archive")
+
 	for _, s := range status {
-		log.Printf("processing %s", s.Archiver)
-		arch, err := archiver.SetupArchiver(s.Archiver, "")
-		if err != nil || arch == nil {
-			log.Printf("setup '%s' archiver: %s", s.Archiver, err)
-			continue
-		}
-		minSize, maxSize := arch.BatchSizeMinMax()
-
-		// check that there are min entries to copy
-		var count int
-		if s.LogScoreID.Valid && s.LogScoreID.Int64 > 0 {
-			log.Printf("getting count after %d", s.LogScoreID.Int64)
-			err := db.DB.Get(&count, "select count(*) from log_scores where id > ?", s.LogScoreID)
-			if err != nil {
-				log.Fatalf("db err: %s", err)
-			}
-		} else {
-			// log.Println("getting full count")
-			// err := db.DB.Get(&count, "select count(*) from log_scores")
-			// if err != nil {
-			// 	log.Fatalf("db err: %s", err)
-			// }
-		}
-		if count < minSize {
-			log.Printf("Only %d entries available (%s needs %d)", count, s.Archiver, minSize)
-			continue
-		}
-
-		if count > maxSize {
-			log.Printf("has more than max")
-		}
-
-		// todo: where id > lastID ...
-		rows, err := db.DB.Query(
-			fmt.Sprintf(`select id,monitor_id,sexrver_id,UNIX_TIMESTAMP(ts),score,step,offset,attributes
-				from log_scores
-				where ts > 0
-				order by id
-				limit ?`),
-			maxSize,
-		)
-
-		logScores := []*logscore.LogScore{}
-
-		for rows.Next() {
-
-			var monitorID sql.NullInt64
-			var offset sql.NullFloat64
-
-			ls := logscore.LogScore{}
-
-			// todo: add new meta data column
-
-			err := rows.Scan(&ls.ID, &monitorID, &ls.ServerID, &ls.Ts, &ls.Score, &ls.Step, &offset)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// NULL as "0" here is what we want
-			ls.MonitorID = monitorID.Int64
-
-			if offset.Valid {
-				ls.Offset = &offset.Float64
-			} else {
-				ls.Offset = nil
-			}
-
-			logScores = append(logScores, &ls)
-		}
-		rows.Close()
-		if err = rows.Err(); err != nil {
-			log.Fatal(err)
-		}
-
-		cnt, err := arch.Store(logScores)
-		log.Printf("%s saved %d scores", s.Archiver, cnt)
+		err := source.Process(s)
 		if err != nil {
-			log.Printf("err: %s", err)
-			continue
+			log.Printf("error processing %s: %s", s.Archiver, err)
 		}
-		// update status pointer
+
 	}
 
 }
