@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"time"
 
 	"github.com/ntppool/archiver/logscore"
 	"github.com/ntppool/archiver/storage"
@@ -90,7 +91,7 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 		  {"name": "id", "type": "long"},
 		  {"name": "server_id", "type": "int"},
 		  {"name": "monitor_id", "type": "int"},
-		  {"name": "ts", "type": "int"},
+		  {"name": "ts", "type": "long", "logicalType": "timestamp-micros"},
 		  {"name": "score", "type": "float"},
 		  {"name": "step", "type": "float"},
 		  {"name": "offset", "type": ["null", "float"]},
@@ -149,7 +150,7 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 			"id":         ls.ID,
 			"server_id":  ls.ServerID,
 			"monitor_id": ls.MonitorID,
-			"ts":         ls.Ts,
+			"ts":         time.Unix(ls.Ts, 0),
 			"score":      ls.Score,
 			"step":       ls.Step,
 			"offset":     offset,

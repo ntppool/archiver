@@ -41,7 +41,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	var count int
 	if s.LogScoreID.Valid && s.LogScoreID.Int64 > 0 {
 		lastID = s.LogScoreID.Int64
-		log.Printf("getting count after %d", s.LogScoreID.Int64)
+		log.Printf("getting count after %d from %s", s.LogScoreID.Int64, source.Table)
 		err := db.DB.Get(&count,
 			fmt.Sprintf("select count(*) from %s where id > ?", source.Table),
 			s.LogScoreID)
@@ -49,7 +49,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			log.Fatalf("db err: %s", err)
 		}
 	} else {
-		log.Println("getting full count")
+		log.Printf("getting full count from %s", source.Table)
 		err := db.DB.Get(&count,
 			fmt.Sprintf("select count(*) from %s", source.Table),
 		)
