@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 
 	gstorage "cloud.google.com/go/storage"
@@ -66,6 +67,8 @@ func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	}
 
 	err = fh.Close()
+
+	os.Remove(fh.Name())
 
 	return n, err
 }
