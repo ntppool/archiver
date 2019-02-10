@@ -2,6 +2,7 @@ package archiver
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ntppool/archiver/storage"
 	"github.com/ntppool/archiver/storage/clickhouse"
@@ -21,7 +22,11 @@ func SetupArchiver(name string, config string) (storage.Archiver, error) {
 		}
 		return ia, nil
 	case "fileavro":
-		fa, err := fileavro.NewArchiver("avro-data")
+		avroPath := os.Getenv("avro_path")
+		if len(avroPath) == 0 {
+			return nil, fmt.Errorf("avro_path env not set for fileavro")
+		}
+		fa, err := fileavro.NewArchiver(avroPath)
 		if err != nil {
 			return nil, err
 		}

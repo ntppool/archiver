@@ -10,6 +10,7 @@ import (
 type Archiver interface {
 	BatchSizeMinMax() (int, int)
 	Store(ls []*logscore.LogScore) (int, error)
+	Close() error
 	// Get(ServerID int) ([]LogScore, error)
 }
 

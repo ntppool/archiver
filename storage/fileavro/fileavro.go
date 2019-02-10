@@ -36,7 +36,8 @@ func NewArchiver(path string) (storage.FileArchiver, error) {
 
 // BatchSizeMinMax returns the minimum and maximum batch size for InfluxArchiver
 func (a *AvroArchiver) BatchSizeMinMax() (int, int) {
-	return 500000, 10000000
+	// return 500000, 10000000
+	return 1, 10000000
 }
 
 // FileName returns the suggested filename for the given logscores
@@ -95,7 +96,8 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 		  {"name": "score", "type": "float"},
 		  {"name": "step", "type": "float"},
 		  {"name": "offset", "type": ["null", "float"]},
-		  {"name": "leap", "type": ["null", "int"]}
+		  {"name": "leap", "type": ["null", "int"]},
+		  {"name": "error", "type": ["null", "string"]}
 		 ]
 	}`)
 	if err != nil {
@@ -146,6 +148,11 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 			leap = goavro.Union("int", int(ls.Meta.Leap))
 		}
 
+		var lsError interface{}
+		if len(ls.Meta.Error) > 0 {
+			lsError = goavro.Union("string", ls.Meta.Error)
+		}
+
 		avromap := map[string]interface{}{
 			"id":         ls.ID,
 			"server_id":  ls.ServerID,
@@ -155,6 +162,7 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 			"step":       ls.Step,
 			"offset":     offset,
 			"leap":       leap,
+			"error":      lsError,
 		}
 
 		// textual, err := codec.TextualFromNative(nil, avromap)
@@ -185,4 +193,9 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 	}
 
 	return count, nil
+}
+
+// Close finishes up the archiver
+func (a *AvroArchiver) Close() error {
+	return nil
 }

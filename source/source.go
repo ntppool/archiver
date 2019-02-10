@@ -27,6 +27,8 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		log.Printf("setup '%s' archiver: %s", s.Archiver, err)
 		return err
 	}
+	defer arch.Close()
+
 	minSize, maxSize := arch.BatchSizeMinMax()
 
 	lastID := int64(0)
@@ -35,7 +37,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Has attributes: %t", hasAttributes)
+	log.Printf("%s has attributes: %t", source.Table, hasAttributes)
 
 	// check that there are min entries to copy
 	var count int
@@ -43,7 +45,8 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		lastID = s.LogScoreID.Int64
 		log.Printf("getting count after %d from %s", s.LogScoreID.Int64, source.Table)
 		err := db.DB.Get(&count,
-			fmt.Sprintf("select count(*) from %s where id > ?", source.Table),
+			fmt.Sprintf(`select count(*) from %s where id > ? and ts != "0000-00-00 00:00:00"`,
+				source.Table),
 			s.LogScoreID)
 		if err != nil {
 			log.Fatalf("db err: %s", err)
@@ -86,6 +89,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 				from %s
 				where 
 				  id > ?
+				  and ts != "0000-00-00 00:00:00"
 				order by id
 				limit ?`,
 				fields,

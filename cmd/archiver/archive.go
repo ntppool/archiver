@@ -46,6 +46,7 @@ func runArchive(table string) error {
 		return fmt.Errorf("database connection: %s", err)
 	}
 
+	// todo: make this be a goroutine that waits for a signal to release the lock
 	lock := getLock()
 	if !lock {
 		return fmt.Errorf("Did not get lock, exiting")
@@ -63,7 +64,6 @@ func runArchive(table string) error {
 		if err != nil {
 			return fmt.Errorf("error processing %s: %s", s.Archiver, err)
 		}
-
 	}
 
 	return nil

@@ -19,7 +19,8 @@ type LogScore struct {
 }
 
 type LogScoreMetadata struct {
-	Leap int64 `json:"leap"`
+	Leap  int64  `json:"leap,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 // JSON returns LogScore in JSON format plus a newline (\n) character

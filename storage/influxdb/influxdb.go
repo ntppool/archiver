@@ -127,3 +127,8 @@ func (a *InfluxArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 
 	return 0, nil
 }
+
+// Close finishes up the archiver
+func (a *InfluxArchiver) Close() error {
+	return nil
+}

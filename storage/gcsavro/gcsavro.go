@@ -17,26 +17,41 @@ import (
 )
 
 type gcsAvroArchiver struct {
-	fileAvro storage.FileArchiver
+	fileAvro   storage.FileArchiver
+	bucketName string
+	tempdir    string
 }
 
 // NewArchiver returns an archiver that stores data in avro files in the specified path
 func NewArchiver() (storage.Archiver, error) {
 
+	bucketName := os.Getenv("gc_bucket")
+	if len(bucketName) == 0 {
+		return nil, fmt.Errorf("gc_bucket must be set")
+	}
+
 	tempdir, err := ioutil.TempDir("", "gcsavro")
 	if err != nil {
 		return nil, err
 	}
-	// defer os.RemoveAll(tempdir)
 
 	fa, err := fileavro.NewArchiver(tempdir)
 	if err != nil {
 		return nil, err
 	}
 
-	a := &gcsAvroArchiver{fileAvro: fa}
+	a := &gcsAvroArchiver{
+		fileAvro:   fa,
+		bucketName: bucketName,
+		tempdir:    tempdir,
+	}
 
 	return a, nil
+}
+
+func (a *gcsAvroArchiver) Close() error {
+	os.RemoveAll(a.tempdir)
+	return nil
 }
 
 func (a *gcsAvroArchiver) BatchSizeMinMax() (int, int) {
@@ -44,12 +59,12 @@ func (a *gcsAvroArchiver) BatchSizeMinMax() (int, int) {
 }
 
 func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
-	fh, err := ioutil.TempFile("", "gcsavro")
+	fh, err := ioutil.TempFile("", "gcsavro-")
 	if err != nil {
 		return 0, err
 	}
 
-	log.Printf("Temp FH: %s", fh.Name())
+	// log.Printf("Temp FH: %s", fh.Name())
 
 	n, err := a.fileAvro.StoreWriter(fh, logscores)
 	if err != nil {
@@ -75,10 +90,12 @@ func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 
 func (a *gcsAvroArchiver) Upload(fh io.ReadWriteCloser, path string) error {
 
+	log.Printf("Uploading to %s/%s", a.bucketName, path)
+
 	ctx := context.Background()
 	client, err := gstorage.NewClient(ctx)
 
-	wc := client.Bucket("beta-logscores").Object(path).NewWriter(ctx)
+	wc := client.Bucket(a.bucketName).Object(path).NewWriter(ctx)
 
 	if _, err = io.Copy(wc, fh); err != nil {
 		return err
