@@ -47,7 +47,7 @@ func runArchive(table string) error {
 	}
 
 	// todo: make this be a goroutine that waits for a signal to release the lock
-	lock := getLock()
+	lock := getLock("archiver-" + os.Getenv("db_database"))
 	if !lock {
 		return fmt.Errorf("Did not get lock, exiting")
 	}
