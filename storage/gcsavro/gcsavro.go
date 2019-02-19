@@ -96,7 +96,10 @@ func (a *gcsAvroArchiver) Upload(fh io.ReadWriteCloser, path string) error {
 	client, err := gstorage.NewClient(ctx)
 
 	bucket := client.Bucket(a.bucketName).UserProject("ntppool")
-	wc := bucket.Object(path).NewWriter(ctx)
+	obj := bucket.Object(path)
+	wc := obj.NewWriter(ctx)
+	wc.ContentType = "avro/binary"
+	wc.CacheControl = "public, max-age=157248000"
 
 	if _, err = io.Copy(wc, fh); err != nil {
 		return err
