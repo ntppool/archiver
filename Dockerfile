@@ -1,8 +1,7 @@
 FROM golang:1.11.5-alpine3.9 AS build
-
 WORKDIR /go/src/github.com/ntppool/archiver
 ADD . /go/src/github.com/ntppool/archiver
-RUN go install
+RUN go install ./cmd/archiver
 
 #FROM node:8 AS clientbuild
 #WORKDIR /bearbank/
