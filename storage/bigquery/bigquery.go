@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
 
 	"cloud.google.com/go/bigquery"
 	"go.ntppool.org/archiver/logscore"
@@ -15,21 +14,21 @@ import (
 	"go.ntppool.org/archiver/storage/fileavro"
 )
 
-type gcsAvroArchiver struct {
-	fileAvro   storage.FileArchiver
-	bucketName string
-	tempdir    string
+type bqArchiver struct {
+	fileAvro    storage.FileArchiver
+	datasetName string
+	tempdir     string
 }
 
 // NewArchiver returns an archiver that stores data in avro files in the specified path
 func NewArchiver() (storage.Archiver, error) {
 
-	bucketName := os.Getenv("gc_bucket")
-	if len(bucketName) == 0 {
-		return nil, fmt.Errorf("gc_bucket must be set")
+	datasetName := os.Getenv("bq_dataset")
+	if len(datasetName) == 0 {
+		return nil, fmt.Errorf("bq_dataset must be set")
 	}
 
-	tempdir, err := ioutil.TempDir("", "gcsavro")
+	tempdir, err := ioutil.TempDir("", "bqavro")
 	if err != nil {
 		return nil, err
 	}
@@ -39,25 +38,26 @@ func NewArchiver() (storage.Archiver, error) {
 		return nil, err
 	}
 
-	a := &gcsAvroArchiver{
-		fileAvro:   fa,
-		bucketName: bucketName,
-		tempdir:    tempdir,
+	a := &bqArchiver{
+		fileAvro:    fa,
+		datasetName: datasetName,
+		tempdir:     tempdir,
 	}
 
 	return a, nil
 }
 
-func (a *gcsAvroArchiver) Close() error {
+func (a *bqArchiver) Close() error {
 	os.RemoveAll(a.tempdir)
 	return nil
 }
 
-func (a *gcsAvroArchiver) BatchSizeMinMax() (int, int) {
-	return a.fileAvro.BatchSizeMinMax()
+func (a *bqArchiver) BatchSizeMinMax() (int, int) {
+	return 1000, 500000
+	// return a.fileAvro.BatchSizeMinMax()
 }
 
-func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
+func (a *bqArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	fh, err := ioutil.TempFile("", "gcsavro-")
 	if err != nil {
 		return 0, err
@@ -71,11 +71,7 @@ func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	}
 	fh.Seek(0, 0)
 
-	fileName := a.fileAvro.(*fileavro.AvroArchiver).FileName(logscores)
-	year := time.Unix(logscores[0].Ts, 0).UTC().Year()
-	fileName = fmt.Sprintf("%d/%s", year, fileName)
-
-	err = a.Upload(fh, fileName)
+	err = a.Load(fh)
 	if err != nil {
 		return 0, err
 	}
@@ -87,9 +83,11 @@ func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	return n, err
 }
 
-func (a *gcsAvroArchiver) Upload(fh io.ReadWriteCloser, path string) error {
+func (a *bqArchiver) Load(fh io.ReadWriteCloser) error {
 
-	log.Printf("Uploading to %s/%s", a.bucketName, path)
+	tableName := "log_scores"
+
+	log.Printf("Loading into %s.%s", a.datasetName, tableName)
 
 	r := bigquery.NewReaderSource(fh)
 	r.SourceFormat = "AVRO"
@@ -97,10 +95,14 @@ func (a *gcsAvroArchiver) Upload(fh io.ReadWriteCloser, path string) error {
 	ctx := context.Background()
 
 	client, err := bigquery.NewClient(ctx, "ntppool")
-	ds := client.Dataset("ntpdev")
+	ds := client.Dataset(a.datasetName)
 	table := ds.Table("log_scores")
+	log.Printf("Table ID: %s", table.FullyQualifiedName())
 	loader := table.LoaderFrom(r)
 	job, err := loader.Run(ctx)
+	if err != nil {
+		return fmt.Errorf("could not run job: %s", err)
+	}
 
 	// r.Close()
 
@@ -113,8 +115,8 @@ func (a *gcsAvroArchiver) Upload(fh io.ReadWriteCloser, path string) error {
 	if err != nil {
 		return fmt.Errorf("error checking job status: %s", err)
 	}
-	if status.Err != nil {
-		return fmt.Errorf("job load error: %s", status.Err)
+	if status.Err() != nil {
+		return fmt.Errorf("job load error: %s", status.Err())
 	}
 
 	return nil

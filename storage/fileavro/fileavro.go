@@ -36,8 +36,8 @@ func NewArchiver(path string) (storage.FileArchiver, error) {
 
 // BatchSizeMinMax returns the minimum and maximum batch size for InfluxArchiver
 func (a *AvroArchiver) BatchSizeMinMax() (int, int) {
-	// return 500000, 10000000
-	return 1, 10000000
+	return 500000, 10000000
+	// return 1, 10000000
 }
 
 // FileName returns the suggested filename for the given logscores
