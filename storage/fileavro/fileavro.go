@@ -8,8 +8,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/ntppool/archiver/logscore"
-	"github.com/ntppool/archiver/storage"
+	"go.ntppool.org/archiver/logscore"
+	"go.ntppool.org/archiver/storage"
 
 	goavro "gopkg.in/linkedin/goavro.v2"
 )

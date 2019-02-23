@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ntppool/archiver"
-	"github.com/ntppool/archiver/db"
-	"github.com/ntppool/archiver/logscore"
-	"github.com/ntppool/archiver/storage"
+	"go.ntppool.org/archiver"
+	"go.ntppool.org/archiver/db"
+	"go.ntppool.org/archiver/logscore"
+	"go.ntppool.org/archiver/storage"
 )
 
 type Source struct {

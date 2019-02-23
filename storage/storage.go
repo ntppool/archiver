@@ -3,7 +3,7 @@ package storage
 import (
 	"io"
 
-	"github.com/ntppool/archiver/logscore"
+	"go.ntppool.org/archiver/logscore"
 )
 
 // Archiver is the interface definition for storing data points externally

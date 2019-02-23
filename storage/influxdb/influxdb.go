@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ntppool/archiver/logscore"
+	"go.ntppool.org/archiver/logscore"
 
 	influx "github.com/influxdata/influxdb/client"
 )

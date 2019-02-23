@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/ntppool/archiver/db"
+	"go.ntppool.org/archiver/db"
 )
 
 func main() {

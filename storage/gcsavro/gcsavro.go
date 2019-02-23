@@ -11,9 +11,9 @@ import (
 
 	gstorage "cloud.google.com/go/storage"
 
-	"github.com/ntppool/archiver/logscore"
-	"github.com/ntppool/archiver/storage"
-	"github.com/ntppool/archiver/storage/fileavro"
+	"go.ntppool.org/archiver/logscore"
+	"go.ntppool.org/archiver/storage"
+	"go.ntppool.org/archiver/storage/fileavro"
 )
 
 type gcsAvroArchiver struct {

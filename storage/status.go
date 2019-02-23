@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/kr/pretty"
-	"github.com/ntppool/archiver/db"
+	"go.ntppool.org/archiver/db"
 )
 
 // ArchiveStatus is the data structure from the log_scores_archive_status

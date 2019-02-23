@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/ntppool/archiver/db"
-	"github.com/ntppool/archiver/source"
-	"github.com/ntppool/archiver/storage"
 	"github.com/spf13/cobra"
+	"go.ntppool.org/archiver/db"
+	"go.ntppool.org/archiver/source"
+	"go.ntppool.org/archiver/storage"
 )
 
 // archiveCmd represents the archive command

@@ -1,14 +1,15 @@
-package archiver
+package archiver // import "go.ntppool.org/archiver"
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/ntppool/archiver/storage"
-	"github.com/ntppool/archiver/storage/clickhouse"
-	"github.com/ntppool/archiver/storage/fileavro"
-	"github.com/ntppool/archiver/storage/gcsavro"
-	"github.com/ntppool/archiver/storage/influxdb"
+	"go.ntppool.org/archiver/storage"
+	"go.ntppool.org/archiver/storage/bigquery"
+	"go.ntppool.org/archiver/storage/clickhouse"
+	"go.ntppool.org/archiver/storage/fileavro"
+	"go.ntppool.org/archiver/storage/gcsavro"
+	"go.ntppool.org/archiver/storage/influxdb"
 )
 
 // SetupArchiver returns an Archiver type (mysql, influxdb, bigquery, ...)
@@ -33,6 +34,9 @@ func SetupArchiver(name string, config string) (storage.Archiver, error) {
 		return fa, err
 	case "gcsavro":
 		return gcsavro.NewArchiver()
+	case "bigquery":
+		return bigquery.NewArchiver()
+
 	case "clickhouse":
 		return clickhouse.NewArchiver()
 	// case "bigquery":
