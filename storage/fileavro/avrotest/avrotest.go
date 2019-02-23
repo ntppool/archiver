@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/ntppool/archiver/logscore"
-	"github.com/ntppool/archiver/storage/fileavro"
+	"go.ntppool.org/archiver/logscore"
+	"go.ntppool.org/archiver/storage/fileavro"
 )
 
 func main() {

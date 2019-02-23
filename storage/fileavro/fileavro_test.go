@@ -3,7 +3,7 @@ package fileavro
 import (
 	"testing"
 
-	"github.com/ntppool/archiver/logscore"
+	"go.ntppool.org/archiver/logscore"
 )
 
 func TestStore(t *testing.T) {

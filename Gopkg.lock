@@ -2,12 +2,15 @@
 
 
 [[projects]]
-  digest = "1:2b2dd370d2e40f72a622dfecefcf668cca701b4a31a2119355bc3166fb863280"
+  digest = "1:93d800e83cb74378b11548f96c55c4d6f5db1cdc26354f304b73021aeb65d8f0"
   name = "cloud.google.com/go"
   packages = [
+    "bigquery",
+    "civil",
     "compute/metadata",
     "iam",
     "internal",
+    "internal/fields",
     "internal/optional",
     "internal/trace",
     "internal/version",
@@ -281,7 +284,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bd491f26d4173e17c25e65f5b501f9972b6d91462c51a308419236f8ae84bdd1"
+  digest = "1:e316bb0293a5f5985a67c5c3ad4f2e435be01c570a4d711ebef2f22a163b8679"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
@@ -291,15 +294,15 @@
     "jwt",
   ]
   pruneopts = "NUT"
-  revision = "3e8b2be1363542a95c52ea0796d4a40dacfb5b95"
+  revision = "9b3c75971fc92dd27c6436a37c05c831498658f1"
 
 [[projects]]
   branch = "master"
-  digest = "1:b1085269f659d40b582e254edea4b3ab5948e2e9b85669f0da05ef3469aac2ca"
+  digest = "1:653c52d8527e8d76b16fed98f2c3f8914476c1168976c82e55919ced2eedf576"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "NUT"
-  revision = "d0b11bdaac8adb652bff00e49bcacf992835621a"
+  revision = "cd391775e71e684db52b63df9affd58269495083"
 
 [[projects]]
   digest = "1:e7071ed636b5422cc51c0e3a6cebc229d6c9fffc528814b519a980641422d619"
@@ -325,9 +328,10 @@
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:23d9fc277640dc6c36702437a57f0ee033b9f7c9f05a7a425abc7df28f6dd259"
+  digest = "1:66625df1bf3cbdea50e4cc38df53e72af489d8d95b604d6f42a7997acb4cb07c"
   name = "google.golang.org/api"
   packages = [
+    "bigquery/v2",
     "gensupport",
     "googleapi",
     "googleapi/internal/uritemplates",
@@ -374,7 +378,7 @@
     "googleapis/rpc/status",
   ]
   pruneopts = "NUT"
-  revision = "bd968387e4aa590b3c6e4ba38ecac1ed314d43ad"
+  revision = "082222b4a5c572e33e82ee9162d1352c7cf38682"
 
 [[projects]]
   digest = "1:4837585442801f3c7ebd044a96fce852242529a73bdd96fcba2119ff74987b0b"
@@ -436,6 +440,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "cloud.google.com/go/bigquery",
     "cloud.google.com/go/storage",
     "github.com/go-sql-driver/mysql",
     "github.com/influxdata/influxdb/client",
