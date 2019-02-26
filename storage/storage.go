@@ -2,13 +2,14 @@ package storage
 
 import (
 	"io"
+	"time"
 
 	"go.ntppool.org/archiver/logscore"
 )
 
 // Archiver is the interface definition for storing data points externally
 type Archiver interface {
-	BatchSizeMinMax() (int, int)
+	BatchSizeMinMaxTime() (int, int, time.Duration)
 	Store(ls []*logscore.LogScore) (int, error)
 	Close() error
 	// Get(ServerID int) ([]LogScore, error)

@@ -1,12 +1,15 @@
 # Log Score Archiver
 
-docker: askbjoernhansen/ntppool-archiver:1.0
+    go get -u -v go.ntppool.org/archiver
+
+    docker: askbjoernhansen/ntppool-archiver:1.0
 
 ## Sorage backends
 
 - ClickHouse
+- Google BigQuery
 - Avro files
-- Avro files in GCS
+- Avro files stored in Google Cloud Storage
 
 ## TODO
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"go.ntppool.org/archiver"
 	"go.ntppool.org/archiver/db"
@@ -29,7 +30,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	}
 	defer arch.Close()
 
-	minSize, maxSize := arch.BatchSizeMinMax()
+	minSize, maxSize, interval := arch.BatchSizeMinMaxTime()
 
 	lastID := int64(0)
 
@@ -38,6 +39,13 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		return err
 	}
 	log.Printf("%s has attributes: %t", source.Table, hasAttributes)
+
+	log.Printf("ModifiedOn: %s", s.ModifiedOn)
+
+	if next := tooSoon(s.ModifiedOn, interval); !next.IsZero() {
+		log.Printf("Don't run until %s", next)
+		return nil
+	}
 
 	// check that there are min entries to copy
 	var count int
@@ -72,6 +80,12 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	}
 
 	for count > minSize {
+
+		if next := tooSoon(s.ModifiedOn, interval); !next.IsZero() {
+			log.Printf("Don't run again until %s", next)
+			return nil
+		}
+
 		log.Printf("Count: %d, minSize: %d", count, minSize)
 
 		log.Printf("Fetching up to %d LogScores from %s with id > %d",
@@ -163,6 +177,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 		newLastID := logScores[len(logScores)-1].ID
 		log.Printf("Setting new Last ID to %d (was %d)", newLastID, lastID)
+		s.ModifiedOn = time.Now()
 		err = storage.SetArchiveStatus(s.Archiver, newLastID)
 		if err != nil {
 			return fmt.Errorf("Could not update archiver status for %q to %d: %s",
@@ -202,4 +217,18 @@ func (source *Source) checkAttributes() (bool, error) {
 	}
 
 	return false, nil
+}
+
+func tooSoon(last time.Time, interval time.Duration) time.Time {
+	// log.Printf("tooSoon(%s, %s) called", last, interval)
+	if last.IsZero() {
+		return time.Time{}
+	}
+	next := last.Add(interval)
+	if time.Now().Before(next) {
+		// log.Printf("tooSoon returning %s", next)
+		return next
+	}
+	// log.Printf("- tooSoon returning Zero time")
+	return time.Time{}
 }

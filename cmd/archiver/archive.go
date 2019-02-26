@@ -46,6 +46,10 @@ func runArchive(table string) error {
 		return fmt.Errorf("database connection: %s", err)
 	}
 
+	if err = db.DB.Ping(); err != nil {
+		log.Fatalf("Could not connect to database: %s", err)
+	}
+
 	// todo: make this be a goroutine that waits for a signal to release the lock
 	lock := getLock("archiver-" + os.Getenv("db_database"))
 	if !lock {

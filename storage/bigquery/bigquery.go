@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"go.ntppool.org/archiver/logscore"
@@ -52,9 +53,10 @@ func (a *bqArchiver) Close() error {
 	return nil
 }
 
-func (a *bqArchiver) BatchSizeMinMax() (int, int) {
-	return 1000, 500000
-	// return a.fileAvro.BatchSizeMinMax()
+func (a *bqArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {
+	// we're limited to 1000 load jobs per table per day, so make
+	// sure we stay way under by waiting 10 minutes between each
+	return 200, 10000000, time.Minute * 10
 }
 
 func (a *bqArchiver) Store(logscores []*logscore.LogScore) (int, error) {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/kshvakov/clickhouse"
 
@@ -62,9 +63,12 @@ func NewArchiver() (storage.Archiver, error) {
 	return a, nil
 }
 
-// BatchSizeMinMax returns the minimum and maximum batch size for InfluxArchiver
-func (a *CHArchiver) BatchSizeMinMax() (int, int) {
-	return 1, 5000000
+// BatchSizeMinMaxTime returns the minimum and maximum batch size
+func (a *CHArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {
+	// inserting data in "real time" is fine according to
+	// https://clickhouse.yandex/docs/en/query_language/insert_into/
+	// it's just after to do bigger batches, so do up to 500k at once
+	return 50, 500000, time.Millisecond * 0
 }
 
 // Store sends metrics to ClickHouse

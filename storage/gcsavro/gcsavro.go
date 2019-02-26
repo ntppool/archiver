@@ -54,8 +54,8 @@ func (a *gcsAvroArchiver) Close() error {
 	return nil
 }
 
-func (a *gcsAvroArchiver) BatchSizeMinMax() (int, int) {
-	return a.fileAvro.BatchSizeMinMax()
+func (a *gcsAvroArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {
+	return a.fileAvro.BatchSizeMinMaxTime()
 }
 
 func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {

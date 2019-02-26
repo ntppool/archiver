@@ -31,8 +31,8 @@ func NewInfluxArchiver() (*InfluxArchiver, error) {
 }
 
 // BatchSizeMinMax returns the minimum and maximum batch size for InfluxArchiver
-func (a *InfluxArchiver) BatchSizeMinMax() (int, int) {
-	return 100, 50000
+func (a *InfluxArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {
+	return 100, 50000, time.Second * 10
 }
 
 func (a *InfluxArchiver) influxConn() (*influx.Client, error) {

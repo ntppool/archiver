@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"log"
+	"regexp"
 
 	// import the mysql driver
 	_ "github.com/go-sql-driver/mysql"
@@ -14,7 +15,13 @@ var DB *sqlx.DB
 
 // Setup the state database connection
 func Setup(dsn string) error {
-	log.Printf("connecting to %q", dsn)
+
+	dsn = dsn + "?&parseTime=true&loc=UTC"
+
+	re := regexp.MustCompile(":.*?@")
+	redacted := re.ReplaceAllString(dsn, ":...@")
+
+	log.Printf("connecting to %q", redacted)
 
 	db, err := sqlx.Open("mysql", dsn)
 	if err != nil {
