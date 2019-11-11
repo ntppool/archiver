@@ -36,13 +36,13 @@ func GetArchiveStatus() ([]ArchiveStatus, error) {
 	return statuses, nil
 }
 
-// SetArchiveStatus updates the "last ID" status for the given archiver
-func SetArchiveStatus(archiver string, lastID int64) error {
+// SetStatus updates the "last ID" status for the given archiver
+func (status *ArchiveStatus) SetStatus(lastID int64) error {
 	_, err := db.DB.Exec(
 		`update log_scores_archive_status
 		set log_score_id=? where archiver=?`,
-		lastID, archiver,
+		lastID, status.Archiver,
 	)
-	// log.Printf("%+v", r)
+	status.ModifiedOn = time.Now()
 	return err
 }

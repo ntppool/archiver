@@ -11,7 +11,7 @@ import (
 	"go.ntppool.org/archiver/logscore"
 	"go.ntppool.org/archiver/storage"
 
-	goavro "gopkg.in/linkedin/goavro.v2"
+	goavro "github.com/linkedin/goavro/v2"
 )
 
 // AvroArchiver stores avro files to a file system path
