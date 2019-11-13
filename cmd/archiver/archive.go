@@ -62,12 +62,21 @@ func runArchive(table string) error {
 	}
 
 	source := source.New(table)
-
 	for _, s := range status {
+
+		if s.Archiver == "cleanup" {
+			err = source.Cleanup(s)
+			if err != nil {
+				log.Printf("error running cleanup: %s", err)
+			}
+			continue
+		}
+
 		err := source.Process(s)
 		if err != nil {
 			return fmt.Errorf("error processing %s: %s", s.Archiver, err)
 		}
+
 	}
 
 	return nil

@@ -38,11 +38,22 @@ func GetArchiveStatus() ([]ArchiveStatus, error) {
 
 // SetStatus updates the "last ID" status for the given archiver
 func (status *ArchiveStatus) SetStatus(lastID int64) error {
+
+	var logScoreID sql.NullInt64
+	if lastID > 0 {
+		logScoreID = sql.NullInt64{lastID, true}
+	}
+
 	_, err := db.DB.Exec(
 		`update log_scores_archive_status
-		set log_score_id=? where archiver=?`,
-		lastID, status.Archiver,
+			set log_score_id=?, modified_on=NOW() where archiver=?`,
+		logScoreID, status.Archiver,
 	)
+
+	if err != nil {
+		return err
+	}
 	status.ModifiedOn = time.Now()
-	return err
+	status.LogScoreID = logScoreID
+	return nil
 }

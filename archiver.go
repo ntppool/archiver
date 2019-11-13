@@ -10,6 +10,7 @@ import (
 	"go.ntppool.org/archiver/storage/fileavro"
 	"go.ntppool.org/archiver/storage/gcsavro"
 	"go.ntppool.org/archiver/storage/influxdb"
+	"go.ntppool.org/archiver/storage/cleanup"
 )
 
 // SetupArchiver returns an Archiver type (mysql, influxdb, bigquery, ...)
@@ -39,6 +40,10 @@ func SetupArchiver(name string, config string) (storage.Archiver, error) {
 
 	case "clickhouse":
 		return clickhouse.NewArchiver()
+
+	case "cleanup":
+		return cleanup.NewArchiver()
+
 	// case "bigquery":
 	// case "s3":
 	// case "clickhouse":

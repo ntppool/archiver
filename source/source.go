@@ -81,11 +81,6 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 	for count > minSize {
 
-		if next := tooSoon(s.ModifiedOn, interval); !next.IsZero() {
-			log.Printf("Don't run again until %s", next)
-			return nil
-		}
-
 		log.Printf("Count: %d, minSize: %d", count, minSize)
 
 		log.Printf("Fetching up to %d LogScores from %s with id > %d",
@@ -177,8 +172,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 		newLastID := logScores[len(logScores)-1].ID
 		log.Printf("Setting new Last ID to %d (was %d)", newLastID, lastID)
-		s.ModifiedOn = time.Now()
-		err = storage.SetArchiveStatus(s.Archiver, newLastID)
+		err = s.SetStatus(newLastID)
 		if err != nil {
 			return fmt.Errorf("Could not update archiver status for %q to %d: %s",
 				s.Archiver, newLastID, err)
@@ -190,6 +184,11 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	}
 
 	return nil
+}
+
+func (source *Source) Cleanup(status storage.ArchiveStatus) error {
+	c := &Cleanup{}
+	return c.Run(source, status)
 }
 
 func (source *Source) checkAttributes() (bool, error) {
