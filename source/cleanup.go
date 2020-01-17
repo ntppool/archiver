@@ -17,7 +17,7 @@ type Cleaner interface {
 type Cleanup struct{}
 
 func (c *Cleanup) Interval() time.Duration {
-	return 20 * time.Minute
+	return 10 * time.Minute
 }
 
 func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
@@ -36,7 +36,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 		  ts < date_sub(now(), interval 23 day)
 		  and id < (select min(log_score_id) from log_scores_archive_status)
 		order by id
-		limit 50000`,
+		limit 100000`,
 	)
 	if err != nil {
 		return fmt.Errorf("cleanup error: %s", err)
