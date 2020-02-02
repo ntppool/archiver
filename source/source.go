@@ -34,11 +34,17 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 	lastID := int64(0)
 
-	hasAttributes, err := source.checkAttributes()
+	hasAttributes, err := source.checkField("attributes")
 	if err != nil {
 		return err
 	}
-	log.Printf("%s has attributes: %t", source.Table, hasAttributes)
+
+	hasRTT, err := source.checkField("rtt")
+	if err != nil {
+		return err
+	}
+
+	log.Printf("%s has rtt: %t", source.Table, hasRTT)
 
 	log.Printf("ModifiedOn: %s", s.ModifiedOn)
 
@@ -91,12 +97,15 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		if hasAttributes {
 			fields = fields + ",attributes"
 		}
+		if hasRTT {
+			fields = fields + ",rtt"
+		}
 
 		rows, err := db.DB.Query(
 			fmt.Sprintf(
 				`select %s
 				from %s
-				where 
+				where
 				  id > ?
 				  and ts != "0000-00-00 00:00:00"
 				order by id
@@ -117,6 +126,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 			var monitorID sql.NullInt64
 			var offset sql.NullFloat64
+			var rtt sql.NullInt64
 			var attributes sql.RawBytes
 
 			ls := logscore.LogScore{}
@@ -126,6 +136,9 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			fields := []interface{}{&ls.ID, &monitorID, &ls.ServerID, &ls.Ts, &ls.Score, &ls.Step, &offset}
 			if hasAttributes {
 				fields = append(fields, &attributes)
+			}
+			if hasRTT {
+				fields = append(fields, &rtt)
 			}
 
 			err := rows.Scan(fields...)
@@ -140,6 +153,12 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 				ls.Offset = &offset.Float64
 			} else {
 				ls.Offset = nil
+			}
+
+			if rtt.Valid {
+				ls.RTT = &rtt.Int64
+			} else {
+				ls.RTT = nil
 			}
 
 			if len(attributes) > 0 {
@@ -191,7 +210,7 @@ func (source *Source) Cleanup(status storage.ArchiveStatus) error {
 	return c.Run(source, status)
 }
 
-func (source *Source) checkAttributes() (bool, error) {
+func (source *Source) checkField(field string) (bool, error) {
 
 	type TableStruct struct {
 		Field   string         `db:"Field"`
@@ -210,7 +229,7 @@ func (source *Source) checkAttributes() (bool, error) {
 	}
 
 	for _, c := range columns {
-		if c.Field == "attributes" {
+		if c.Field == field {
 			return true, nil
 		}
 	}

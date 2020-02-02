@@ -15,6 +15,7 @@ type LogScore struct {
 	Score     float64          `json:"sc" msgpack:"sc"`
 	Step      float64          `json:"st" msgpack:"st"`
 	Offset    *float64         `json:"of" msgpack:"of"`
+	RTT       *int64           `json:"rtt" msgpack:"rtt"`
 	Meta      LogScoreMetadata `json:"attributes,omitempty"`
 }
 

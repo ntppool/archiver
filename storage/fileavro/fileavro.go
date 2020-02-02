@@ -95,6 +95,7 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 		  {"name": "score", "type": "float"},
 		  {"name": "step", "type": "float"},
 		  {"name": "offset", "type": ["null", "float"]},
+		  {"name": "rtt", "type": ["null", "int"]},
 		  {"name": "leap", "type": ["null", "int"]},
 		  {"name": "error", "type": ["null", "string"]}
 		 ]
@@ -135,11 +136,18 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 		// }
 
 		var offset interface{}
+		var rtt interface{}
 
 		if ls.Offset == nil {
 			offset = nil
 		} else {
 			offset = goavro.Union("float", *ls.Offset)
+		}
+
+		if ls.RTT == nil {
+			rtt = nil
+		} else {
+			rtt = goavro.Union("int", *ls.RTT)
 		}
 
 		var leap interface{}
@@ -160,6 +168,7 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 			"score":      ls.Score,
 			"step":       ls.Step,
 			"offset":     offset,
+			"rtt":        rtt,
 			"leap":       leap,
 			"error":      lsError,
 		}

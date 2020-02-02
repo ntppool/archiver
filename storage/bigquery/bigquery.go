@@ -106,13 +106,7 @@ func (a *bqArchiver) Load(fh io.ReadWriteCloser) error {
 		return fmt.Errorf("could not run job: %s", err)
 	}
 
-	// r.Close()
-
-	// if err := r.Close(); err != nil {
-	// 	return err
-	// }
-
-	log.Printf("Loading BigQuery data with job %d", job.ID)
+	log.Printf("Loading BigQuery data with job %q", job.ID())
 	status, err := job.Wait(ctx)
 	if err != nil {
 		return fmt.Errorf("error checking job status: %s", err)

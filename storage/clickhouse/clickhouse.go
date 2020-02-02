@@ -47,12 +47,12 @@ func NewArchiver() (storage.Archiver, error) {
 		score		Float32,
 		step 		Float32,
 		offset 		Nullable(Float64),
+		rtt			Nullable(UInt32),
 		leap 		Nullable(UInt8),
 		error       Nullable(String)
 	) engine=MergeTree
 	PARTITION BY dt
 	ORDER BY (server_id, ts)
-
 `)
 	if err != nil {
 		return nil, err
@@ -81,8 +81,8 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	}
 	stmt, err := tx.Prepare(`
 		INSERT INTO log_scores
-			(dt, id, server_id, monitor_id, ts, score, step, offset, leap, error)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+			(dt, id, server_id, monitor_id, ts, score, step, offset, rtt, leap, error)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return 0, err
 	}
@@ -106,7 +106,8 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 			l.Ts, // clickhouse figures out the right data in UTC from this
 			l.ID, l.ServerID, l.MonitorID,
 			l.Ts,
-			l.Score, l.Step, l.Offset,
+			l.Score, l.Step,
+			l.Offset, l.RTT,
 			leap, lsError,
 		)
 		if err != nil {
