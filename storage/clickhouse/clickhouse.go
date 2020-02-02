@@ -49,6 +49,7 @@ func NewArchiver() (storage.Archiver, error) {
 		offset 		Nullable(Float64),
 		rtt			Nullable(UInt32),
 		leap 		Nullable(UInt8),
+		warning	    Nullable(String),
 		error       Nullable(String)
 	) engine=MergeTree
 	PARTITION BY dt
