@@ -29,14 +29,17 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 
 	log.Printf("running cleaner")
 
+	maxDays := 18
+
 	r, err := db.DB.Exec(
 		`delete
 		from log_scores
 		where
-		  ts < date_sub(now(), interval 23 day)
+		  ts < date_sub(now(), interval ? day)
 		  and id < (select min(log_score_id) from log_scores_archive_status)
 		order by id
 		limit 100000`,
+		maxDays,
 	)
 	if err != nil {
 		return fmt.Errorf("cleanup error: %s", err)
