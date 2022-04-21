@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kshvakov/clickhouse"
+	"github.com/ClickHouse/clickhouse-go"
 
 	"go.ntppool.org/archiver/logscore"
 	"go.ntppool.org/archiver/storage"

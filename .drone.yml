@@ -1,0 +1,51 @@
+---
+kind: pipeline
+type: kubernetes
+name: default
+
+environment:
+  GOCACHE: /cache/pkg/cache
+  GOMODCACHE: /cache/pkg/mod
+
+steps:
+- name: test
+  image: golang:1.17.8
+  volumes:
+    - name: cache
+      path: /go
+    - name: gopkg
+      path: /cache
+  commands:
+  - go test -v
+  - go build
+
+- name: docker
+  image: harbor.ntppool.org/ntppool/drone-kaniko:main
+  pull: always
+  volumes:
+    - name: cache
+      path: /go
+    - name: gopkg
+      path: /cache
+  settings:
+    repo: ntppool/archiver
+    registry: harbor.ntppool.org
+    auto_tag: true
+    tags: SHA7,${DRONE_SOURCE_BRANCH}
+    cache: true
+    username:
+      from_secret: harbor_username
+    password:
+      from_secret: harbor_password
+
+volumes:
+  - name: cache
+    temp: {}
+  - name: gopkg
+    claim:
+      name: go-pkg
+---
+kind: signature
+hmac: 4f49f4620c66c0b7454df7e9124ed338138293a50a3453b14c52ab3a6d49d833
+
+...
