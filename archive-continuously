@@ -3,11 +3,13 @@
 set -eu
 
 wait=${wait-600}
-vault=/vault/secrets/database.env
+vault=/vault/secrets/
 
 while `true`; do
-    if [ -e $vault ]; then
-        source $vault
+    if [ -d $vault ]; then
+        for f in $vault/*.env; do
+            source $f
+        done
     fi
     /archiver/archiver archive || break
     echo waiting $wait seconds
