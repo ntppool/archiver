@@ -18,6 +18,7 @@ steps:
   commands:
   - go test -v
   - go build
+  - go mod vendor
 
 - name: docker
   image: harbor.ntppool.org/ntppool/drone-kaniko:main
@@ -47,6 +48,6 @@ volumes:
 
 ---
 kind: signature
-hmac: 56fbc5b060db8635afd6644c06d91290219bbc2222d1cf4f43f8a21cd92e237f
+hmac: 2d0e141f3cea7a90a2c1a4c4d6ff1e9f5a583b7fb38698193c0a9d1079138a0d
 
 ...
