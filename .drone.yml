@@ -9,9 +9,9 @@ environment:
 
 steps:
 - name: test
-  image: golang:1.17.8
+  image: golang:1.18.1
   volumes:
-    - name: cache
+    - name: go
       path: /go
     - name: gopkg
       path: /cache
@@ -23,7 +23,7 @@ steps:
   image: harbor.ntppool.org/ntppool/drone-kaniko:main
   pull: always
   volumes:
-    - name: cache
+    - name: go
       path: /go
     - name: gopkg
       path: /cache
@@ -39,13 +39,14 @@ steps:
       from_secret: harbor_password
 
 volumes:
-  - name: cache
+  - name: go
     temp: {}
   - name: gopkg
     claim:
       name: go-pkg
+
 ---
 kind: signature
-hmac: ebd96a8c48bd8522c43c5d36f7e33758f39b87e081ef5f9d404025f662c0fd48
+hmac: 56fbc5b060db8635afd6644c06d91290219bbc2222d1cf4f43f8a21cd92e237f
 
 ...
