@@ -22,7 +22,6 @@ func TestStore(t *testing.T) {
 	if err != nil || len(tempdir) == 0 {
 		t.Fatalf("could not create temporary directory: %s", err)
 	}
-
 	defer os.RemoveAll(tempdir)
 
 	av, err := NewArchiver(tempdir)
@@ -34,7 +33,7 @@ func TestStore(t *testing.T) {
 	rtt := int64(11234)
 
 	ls := []*logscore.LogScore{
-		&logscore.LogScore{
+		{
 			ID:        103535350,
 			ServerID:  200,
 			MonitorID: 1,

@@ -94,6 +94,9 @@ func (a *gcsAvroArchiver) Upload(fh io.ReadWriteCloser, path string) error {
 
 	ctx := context.Background()
 	client, err := gstorage.NewClient(ctx)
+	if err != nil {
+		return err
+	}
 
 	bucket := client.Bucket(a.bucketName).UserProject("ntppool")
 	obj := bucket.Object(path)
