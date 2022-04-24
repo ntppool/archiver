@@ -46,6 +46,6 @@ volumes:
       name: go-pkg
 ---
 kind: signature
-hmac: 4f49f4620c66c0b7454df7e9124ed338138293a50a3453b14c52ab3a6d49d833
+hmac: ebd96a8c48bd8522c43c5d36f7e33758f39b87e081ef5f9d404025f662c0fd48
 
 ...
