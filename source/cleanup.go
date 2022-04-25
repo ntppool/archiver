@@ -17,7 +17,7 @@ type Cleaner interface {
 type Cleanup struct{}
 
 func (c *Cleanup) Interval() time.Duration {
-	return 10 * time.Minute
+	return 4 * time.Minute
 }
 
 func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
@@ -29,7 +29,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 
 	log.Printf("running cleaner")
 
-	maxDays := 18
+	maxDays := 15
 
 	r, err := db.DB.Exec(
 		`delete
