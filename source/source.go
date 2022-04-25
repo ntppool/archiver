@@ -44,9 +44,8 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		return err
 	}
 
-	log.Printf("%s has rtt: %t", source.Table, hasRTT)
-
-	log.Printf("ModifiedOn: %s", s.ModifiedOn)
+	// log.Printf("%s has rtt: %t", source.Table, hasRTT)
+	// log.Printf("ModifiedOn: %s", s.ModifiedOn)
 
 	if next := tooSoon(s.ModifiedOn, interval); !next.IsZero() {
 		log.Printf("Don't run until %s", next)
