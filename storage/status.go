@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/kr/pretty"
 	"go.ntppool.org/archiver/db"
 )
 
@@ -30,8 +29,6 @@ func GetArchiveStatus() ([]ArchiveStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	pretty.Println(statuses)
 
 	return statuses, nil
 }

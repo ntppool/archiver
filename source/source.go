@@ -22,7 +22,6 @@ func New(table string) *Source {
 }
 
 func (source *Source) Process(s storage.ArchiveStatus) error {
-	log.Printf("processing %s", s.Archiver)
 	arch, err := archiver.SetupArchiver(s.Archiver, "")
 	if err != nil || arch == nil {
 		log.Printf("setup '%s' archiver: %s", s.Archiver, err)
@@ -31,6 +30,16 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	defer arch.Close()
 
 	minSize, maxSize, interval := arch.BatchSizeMinMaxTime()
+
+	// log.Printf("%s has rtt: %t", source.Table, hasRTT)
+	// log.Printf("ModifiedOn: %s", s.ModifiedOn)
+
+	if next := tooSoon(s.ModifiedOn, interval); !next.IsZero() {
+		// log.Printf("Don't run until %s", next)
+		return nil
+	}
+
+	log.Printf("processing %s", s.Archiver)
 
 	lastID := int64(0)
 
@@ -42,14 +51,6 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	hasRTT, err := source.checkField("rtt")
 	if err != nil {
 		return err
-	}
-
-	// log.Printf("%s has rtt: %t", source.Table, hasRTT)
-	// log.Printf("ModifiedOn: %s", s.ModifiedOn)
-
-	if next := tooSoon(s.ModifiedOn, interval); !next.IsZero() {
-		log.Printf("Don't run until %s", next)
-		return nil
 	}
 
 	// check that there are min entries to copy
