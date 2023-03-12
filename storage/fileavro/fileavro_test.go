@@ -1,7 +1,6 @@
 package fileavro
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -18,7 +17,7 @@ func TestStore(t *testing.T) {
 	// t.Logf("tempdir: %s", tempdir)
 	// defer os.RemoveAll(tempdir)
 
-	tempdir, err := ioutil.TempDir("", "fileavro")
+	tempdir, err := os.MkdirTemp("", "fileavro")
 	if err != nil || len(tempdir) == 0 {
 		t.Fatalf("could not create temporary directory: %s", err)
 	}
@@ -30,7 +29,7 @@ func TestStore(t *testing.T) {
 		t.Fail()
 	}
 
-	rtt := int64(11234)
+	rtt := uint32(11234)
 
 	ls := []*logscore.LogScore{
 		{

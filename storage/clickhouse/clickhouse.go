@@ -3,10 +3,11 @@ package clickhouse
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go"
+	"github.com/ClickHouse/clickhouse-go/v2"
 
 	"go.ntppool.org/archiver/logscore"
 	"go.ntppool.org/archiver/storage"
@@ -93,9 +94,9 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	for _, l := range logscores {
 		// date := clickhouse.Date(time.Unix(l.Ts, 0).In(time.UTC))
 
-		var leap sql.NullInt64
+		var leap *uint8
 		if l.Meta.Leap != 0 {
-			leap = sql.NullInt64{Int64: l.Meta.Leap, Valid: true}
+			leap = &l.Meta.Leap
 		}
 
 		var lsError sql.NullString
@@ -103,18 +104,24 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 			lsError = sql.NullString{String: l.Meta.Error, Valid: true}
 		}
 
+		ts := time.Unix(l.Ts, 0)
+		id := uint64(l.ID)
+
 		_, err := stmt.Exec(
-			l.Ts, // clickhouse figures out the right data in UTC from this
-			l.ID, l.ServerID, l.MonitorID,
-			l.Ts,
+			ts,
+			id,
+			l.ServerID, l.MonitorID,
+			ts,
 			l.Score, l.Step,
 			l.Offset, l.RTT,
 			leap, lsError,
 		)
 		if err != nil {
+			log.Printf("insert error for %+v: %s", l, err)
 			return 0, err
 		}
-		// log.Printf("inserted: %d", result.LastInsertId)
+		// lastID, _ := result.LastInsertId()
+		// log.Printf("inserted: %d", lastID)
 		i++
 	}
 	err = tx.Commit()

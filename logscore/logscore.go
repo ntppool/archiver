@@ -9,18 +9,18 @@ import (
 // LogScore is the data structure for the 'log_score' table (monitoring measurements)
 type LogScore struct {
 	ID        int64            `json:"id" msgpack:"id"`
-	ServerID  int64            `json:"sid" msgpack:"sid"`
-	MonitorID int64            `json:"mid" msgpack:"mid"`
+	ServerID  uint32           `json:"sid" msgpack:"sid"`
+	MonitorID uint32           `json:"mid" msgpack:"mid"`
 	Ts        int64            `json:"ts" msgpack:"ts"`
-	Score     float64          `json:"sc" msgpack:"sc"`
-	Step      float64          `json:"st" msgpack:"st"`
+	Score     float32          `json:"sc" msgpack:"sc"`
+	Step      float32          `json:"st" msgpack:"st"`
 	Offset    *float64         `json:"of" msgpack:"of"`
-	RTT       *int64           `json:"rtt" msgpack:"rtt"`
+	RTT       *uint32          `json:"rtt" msgpack:"rtt"`
 	Meta      LogScoreMetadata `json:"attributes,omitempty"`
 }
 
 type LogScoreMetadata struct {
-	Leap  int64  `json:"leap,omitempty"`
+	Leap  uint8  `json:"leap,omitempty"`
 	Error string `json:"error,omitempty"`
 }
 

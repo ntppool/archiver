@@ -184,7 +184,7 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 		if len(queue) > batchAppendSize {
 			err = w.Append(queue)
 			if err != nil {
-				return count, fmt.Errorf("Append: %s", err)
+				return count, fmt.Errorf("append: %s", err)
 			}
 			count = count + len(queue)
 			queue = []interface{}{}
@@ -194,10 +194,10 @@ func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogSc
 	if len(queue) > 0 {
 		err = w.Append(queue)
 		if err != nil {
-			return count, fmt.Errorf("Append: %s", err)
+			return count, fmt.Errorf("append: %s", err)
 		}
 		count = count + len(queue)
-		queue = []interface{}{}
+		// queue = []interface{}{}
 	}
 
 	return count, nil
