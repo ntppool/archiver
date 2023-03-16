@@ -147,7 +147,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			}
 
 			// NULL as "0" here is what we want
-			ls.MonitorID = uint32(monitorID.Int64)
+			ls.MonitorID = monitorID.Int64
 
 			if offset.Valid {
 				ls.Offset = &offset.Float64
@@ -156,8 +156,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			}
 
 			if rtt.Valid {
-				rtt := uint32(rtt.Int64)
-				ls.RTT = &rtt
+				ls.RTT = &rtt.Int64
 			} else {
 				ls.RTT = nil
 			}

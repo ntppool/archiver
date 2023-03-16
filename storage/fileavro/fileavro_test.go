@@ -29,7 +29,7 @@ func TestStore(t *testing.T) {
 		t.Fail()
 	}
 
-	rtt := uint32(11234)
+	rtt := int64(11234)
 
 	ls := []*logscore.LogScore{
 		{

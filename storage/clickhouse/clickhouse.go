@@ -107,21 +107,25 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 		ts := time.Unix(l.Ts, 0)
 		id := uint64(l.ID)
 
+		var rtt *uint32
+		if l.RTT != nil {
+			urtt := uint32(*l.RTT)
+			rtt = &urtt
+		}
+
 		_, err := stmt.Exec(
 			ts,
 			id,
-			l.ServerID, l.MonitorID,
+			uint32(l.ServerID), uint32(l.MonitorID),
 			ts,
-			l.Score, l.Step,
-			l.Offset, l.RTT,
+			float32(l.Score), float32(l.Step),
+			l.Offset, rtt,
 			leap, lsError,
 		)
 		if err != nil {
 			log.Printf("insert error for %+v: %s", l, err)
 			return 0, err
 		}
-		// lastID, _ := result.LastInsertId()
-		// log.Printf("inserted: %d", lastID)
 		i++
 	}
 	err = tx.Commit()
