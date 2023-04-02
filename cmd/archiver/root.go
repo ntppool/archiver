@@ -16,7 +16,7 @@ var RootCmd = &cobra.Command{
 	Use:     "archiver",
 	Short:   "Archive NTP Pool log scores",
 	Long:    ``,
-	Version: "1.0",
+	Version: "1.3", // todo: get from build
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },

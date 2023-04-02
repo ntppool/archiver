@@ -14,7 +14,9 @@ type Cleaner interface {
 	Run(*Source, storage.ArchiveStatus)
 }
 
-type Cleanup struct{}
+type Cleanup struct {
+	RetentionDays int
+}
 
 func (c *Cleanup) Interval() time.Duration {
 	return 4 * time.Minute
@@ -29,7 +31,11 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 
 	log.Printf("running cleaner")
 
-	maxDays := 15
+	maxDays := c.RetentionDays
+	if maxDays < 3 {
+		log.Printf("retention days set too low (%d), resetting to 3")
+		maxDays = 3
+	}
 
 	r, err := db.DB.Exec(
 		`delete
@@ -53,7 +59,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 
 	err = status.SetStatus(0)
 	if err != nil {
-		return fmt.Errorf("Could not update archiver status for %q : %s", status.Archiver, err)
+		return fmt.Errorf("could not update archiver status for %q : %s", status.Archiver, err)
 	}
 
 	return nil

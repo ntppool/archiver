@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"go.ntppool.org/archiver/db"
@@ -22,6 +23,7 @@ var archiveCmd = &cobra.Command{
 		if len(table) == 0 {
 			table = "log_scores"
 		}
+
 		// month, err := strconv.Atoi(args[0])
 		err := runArchive(table)
 		if err != nil {
@@ -33,6 +35,7 @@ var archiveCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(archiveCmd)
 	archiveCmd.Flags().StringP("table", "t", "log_scores", "Table to pull data from")
+	archiveCmd.Flags().Int("retention", 15, "Minimum days of retention in source table")
 
 }
 
@@ -53,7 +56,7 @@ func runArchive(table string) error {
 	// todo: make this be a goroutine that waits for a signal to release the lock
 	lock := getLock("archiver-" + os.Getenv("db_database"))
 	if !lock {
-		return fmt.Errorf("Did not get lock, exiting")
+		return fmt.Errorf("did not get lock, exiting")
 	}
 
 	status, err := storage.GetArchiveStatus()
@@ -61,7 +64,16 @@ func runArchive(table string) error {
 		return fmt.Errorf("archive status: %s", err)
 	}
 
-	source := source.New(table)
+	// todo: manage the config better instead of having os.Getenv() everywhere
+	retentionDays := 15
+	retentionDaysStr := os.Getenv("retention_days")
+	if len(retentionDaysStr) > 0 {
+		if i, err := strconv.Atoi(retentionDaysStr); err == nil && i > 0 {
+			retentionDays = i
+		}
+	}
+
+	source := source.New(table, retentionDays)
 	for _, s := range status {
 
 		if s.Archiver == "cleanup" {

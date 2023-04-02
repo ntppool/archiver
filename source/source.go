@@ -14,11 +14,15 @@ import (
 )
 
 type Source struct {
-	Table string
+	Table         string
+	retentionDays int
 }
 
-func New(table string) *Source {
-	return &Source{Table: table}
+func New(table string, retentionDays int) *Source {
+	if retentionDays == 0 {
+		retentionDays = 14
+	}
+	return &Source{Table: table, retentionDays: retentionDays}
 }
 
 func (source *Source) Process(s storage.ArchiveStatus) error {
@@ -193,7 +197,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		log.Printf("Setting new Last ID to %d (was %d)", newLastID, lastID)
 		err = s.SetStatus(newLastID)
 		if err != nil {
-			return fmt.Errorf("Could not update archiver status for %q to %d: %s",
+			return fmt.Errorf("could not update archiver status for %q to %d: %s",
 				s.Archiver, newLastID, err)
 		}
 
@@ -206,7 +210,9 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 }
 
 func (source *Source) Cleanup(status storage.ArchiveStatus) error {
-	c := &Cleanup{}
+	c := &Cleanup{
+		RetentionDays: source.retentionDays,
+	}
 	return c.Run(source, status)
 }
 
