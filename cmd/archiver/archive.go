@@ -35,8 +35,6 @@ var archiveCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(archiveCmd)
 	archiveCmd.Flags().StringP("table", "t", "log_scores", "Table to pull data from")
-	archiveCmd.Flags().Int("retention", 15, "Minimum days of retention in source table")
-
 }
 
 func runArchive(table string) error {
