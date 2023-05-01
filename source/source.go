@@ -61,7 +61,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	var count int
 	if s.LogScoreID.Valid && s.LogScoreID.Int64 > 0 {
 		lastID = s.LogScoreID.Int64
-		log.Printf("getting count after %d from %s", s.LogScoreID.Int64, source.Table)
+		// log.Printf("getting count after %d from %s", s.LogScoreID.Int64, source.Table)
 		err := db.DB.Get(&count,
 			fmt.Sprintf(`select count(*) from %s where id > ? and ts != "0000-00-00 00:00:00"`,
 				source.Table),
@@ -91,11 +91,11 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 	for count > minSize {
 
-		log.Printf("Count: %d, minSize: %d", count, minSize)
+		// log.Printf("Count: %d, minSize: %d", count, minSize)
 
-		log.Printf("Fetching up to %d LogScores from %s with id > %d",
-			maxSize, source.Table, lastID,
-		)
+		// log.Printf("Fetching up to %d LogScores from %s with id > %d",
+		// 	maxSize, source.Table, lastID,
+		// )
 
 		fields := `id,monitor_id,server_id,UNIX_TIMESTAMP(ts),score,step,offset`
 		if hasAttributes {
@@ -185,7 +185,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			return nil
 		}
 
-		log.Printf("Storing %d log scores", len(logScores))
+		// log.Printf("Storing %d log scores", len(logScores))
 
 		cnt, err := arch.Store(logScores)
 		log.Printf("%s saved %d scores", s.Archiver, cnt)
@@ -194,7 +194,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		}
 
 		newLastID := logScores[len(logScores)-1].ID
-		log.Printf("Setting new Last ID to %d (was %d)", newLastID, lastID)
+		// log.Printf("Setting new Last ID to %d (was %d)", newLastID, lastID)
 		err = s.SetStatus(newLastID)
 		if err != nil {
 			return fmt.Errorf("could not update archiver status for %q to %d: %s",
