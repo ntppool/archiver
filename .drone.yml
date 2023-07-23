@@ -8,36 +8,36 @@ environment:
   GOMODCACHE: /cache/pkg/mod
 
 steps:
-- name: test
-  image: golang:1.20.3
-  volumes:
-    - name: go
-      path: /go
-    - name: gopkg
-      path: /cache
-  commands:
-  - go test -v
-  - go build
-  - go mod vendor
+  - name: test
+    image: golang:1.20.6
+    volumes:
+      - name: go
+        path: /go
+      - name: gopkg
+        path: /cache
+    commands:
+      - go test -v
+      - go build
+      - go mod vendor
 
-- name: docker
-  image: harbor.ntppool.org/ntppool/drone-kaniko:main
-  pull: always
-  volumes:
-    - name: go
-      path: /go
-    - name: gopkg
-      path: /cache
-  settings:
-    repo: ntppool/archiver
-    registry: harbor.ntppool.org
-    auto_tag: true
-    tags: SHA7,${DRONE_SOURCE_BRANCH}
-    cache: true
-    username:
-      from_secret: harbor_username
-    password:
-      from_secret: harbor_password
+  - name: docker
+    image: harbor.ntppool.org/ntppool/drone-kaniko:main
+    pull: always
+    volumes:
+      - name: go
+        path: /go
+      - name: gopkg
+        path: /cache
+    settings:
+      repo: ntppool/archiver
+      registry: harbor.ntppool.org
+      auto_tag: true
+      tags: SHA7,${DRONE_SOURCE_BRANCH}
+      cache: true
+      username:
+        from_secret: harbor_username
+      password:
+        from_secret: harbor_password
 
 volumes:
   - name: go
@@ -48,6 +48,6 @@ volumes:
 
 ---
 kind: signature
-hmac: b270791a1ffd526a07a790f599f9eb82d19c4d2362f4221975decae3ba3e62d3
+hmac: 537ac3dd68347129e783aa40d84054b8a099a67c978466b286a9bf069519b5d4
 
 ...
