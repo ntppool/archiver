@@ -2,11 +2,11 @@ package source
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"go.ntppool.org/archiver/db"
 	"go.ntppool.org/archiver/storage"
+	"go.ntppool.org/common/logger"
 )
 
 type Cleaner interface {
@@ -23,17 +23,18 @@ func (c *Cleanup) Interval() time.Duration {
 }
 
 func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
+	log := logger.Setup()
 	interval := c.Interval()
 	if next := tooSoon(status.ModifiedOn, interval); !next.IsZero() {
-		log.Printf("Don't run cleaner until %s", next)
+		log.Debug("Don't run cleaner until %s", next)
 		return nil
 	}
 
-	log.Printf("running cleaner")
+	log.Info("running cleaner")
 
 	maxDays := c.RetentionDays
 	if maxDays < 3 {
-		log.Printf("retention days set too low (%d), resetting to 3")
+		log.Warn("retention days set too low (%d), resetting to 3")
 		maxDays = 3
 	}
 
@@ -52,7 +53,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 	}
 
 	rowCount, err := r.RowsAffected()
-	log.Printf("cleaned up %d rows", rowCount)
+	log.Info("cleaned up %d rows", rowCount)
 	if err != nil {
 		return fmt.Errorf("could not get row count: %s", err)
 	}

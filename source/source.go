@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"go.ntppool.org/archiver"
 	"go.ntppool.org/archiver/db"
 	"go.ntppool.org/archiver/logscore"
 	"go.ntppool.org/archiver/storage"
+	"go.ntppool.org/common/logger"
 )
 
 type Source struct {
@@ -26,9 +26,10 @@ func New(table string, retentionDays int) *Source {
 }
 
 func (source *Source) Process(s storage.ArchiveStatus) error {
+	log := logger.Setup()
 	arch, err := archiver.SetupArchiver(s.Archiver, "")
 	if err != nil || arch == nil {
-		log.Printf("setup '%s' archiver: %s", s.Archiver, err)
+		log.Error("setup archiver", "archiver", s.Archiver, "err", err)
 		return err
 	}
 	defer arch.Close()
@@ -43,7 +44,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		return nil
 	}
 
-	log.Printf("processing %s", s.Archiver)
+	log.Info("processing", "archiver", s.Archiver)
 
 	lastID := int64(0)
 
@@ -67,26 +68,29 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 				source.Table),
 			s.LogScoreID)
 		if err != nil {
-			log.Fatalf("db err: %s", err)
+			log.Error("db getting count", "id", s.LogScoreID, "table", source.Table, "err", err)
+			return err
 		}
 	} else {
-		log.Printf("getting full count from %s", source.Table)
+		log.Debug("getting full count", "table", source.Table)
 		err := db.DB.Get(&count,
 			fmt.Sprintf("select count(*) from %s", source.Table),
 		)
 		if err != nil {
-			log.Fatalf("db err: %s", err)
+			log.Error("db getting full count", "err", err)
+			return err
 		}
 	}
 	if count < minSize {
-		log.Printf("Only %d entries available in %s (%s needs %d)",
-			count, source.Table, s.Archiver, minSize,
+		log.Info("too few entries available",
+			"archiver", s.Archiver, "table", source.Table,
+			"count", count, "min-size", minSize,
 		)
 		return nil
 	}
 
 	if count > maxSize {
-		log.Printf("has more than max")
+		log.Info("has more than max rows", "count", count, "max", maxSize)
 	}
 
 	for count > minSize {
@@ -121,7 +125,8 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			maxSize,
 		)
 		if err != nil {
-			log.Fatalf("select error: %s", err)
+			log.Error("select error", "err", err)
+			return err
 		}
 
 		logScores := []*logscore.LogScore{}
@@ -147,7 +152,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 			err := rows.Scan(fields...)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			// NULL as "0" here is what we want
@@ -168,7 +173,8 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			if len(attributes) > 0 {
 				err = json.Unmarshal(attributes, &ls.Meta)
 				if err != nil {
-					log.Fatalf("error unmarshal'ing %q: %s", attributes, err)
+					log.Error("error unmarshal'ing", "data", attributes, "err", err)
+					return err
 				}
 			}
 
@@ -176,19 +182,19 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		}
 		rows.Close()
 		if err = rows.Err(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		if len(logScores) == 0 {
 			// this shouldn't happen, so just in case?
-			log.Printf("No log scores to process for %s", s.Archiver)
+			log.Warn("no log scores to process", "archiver", s.Archiver)
 			return nil
 		}
 
 		// log.Printf("Storing %d log scores", len(logScores))
 
 		cnt, err := arch.Store(logScores)
-		log.Printf("%s saved %d scores", s.Archiver, cnt)
+		log.Info("saved scores", "archiver", s.Archiver, "count", cnt)
 		if err != nil {
 			return err
 		}
