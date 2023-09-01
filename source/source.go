@@ -44,7 +44,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		return nil
 	}
 
-	log.Info("processing", "archiver", s.Archiver)
+	log.Debug("processing", "archiver", s.Archiver)
 
 	lastID := int64(0)
 

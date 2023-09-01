@@ -53,7 +53,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 	}
 
 	rowCount, err := r.RowsAffected()
-	log.Info("cleaned up %d rows", rowCount)
+	log.Info("cleaned rows", "count", rowCount)
 	if err != nil {
 		return fmt.Errorf("could not get row count: %s", err)
 	}
