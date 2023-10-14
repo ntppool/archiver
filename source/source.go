@@ -82,7 +82,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		}
 	}
 	if count < minSize {
-		log.Info("too few entries available",
+		log.Debug("too few entries available",
 			"archiver", s.Archiver, "table", source.Table,
 			"count", count, "min-size", minSize,
 		)
