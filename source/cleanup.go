@@ -16,10 +16,17 @@ type Cleaner interface {
 
 type Cleanup struct {
 	RetentionDays int
+	interval      time.Duration
 }
 
+var defaultInterval = 5 * time.Minute
+var cleanupBatchSize = 100000
+
 func (c *Cleanup) Interval() time.Duration {
-	return 4 * time.Minute
+	if c.interval == 0 {
+		return defaultInterval
+	}
+	return c.interval
 }
 
 func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
@@ -45,8 +52,8 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 		  ts < date_sub(now(), interval ? day)
 		  and id < (select min(log_score_id) from log_scores_archive_status)
 		order by id
-		limit 100000`,
-		maxDays,
+		limit ?`,
+		maxDays, cleanupBatchSize,
 	)
 	if err != nil {
 		return fmt.Errorf("cleanup error: %s", err)
@@ -56,6 +63,12 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 	log.Info("cleaned rows", "count", rowCount)
 	if err != nil {
 		return fmt.Errorf("could not get row count: %s", err)
+	}
+
+	// todo: this doesn't do anything because state isn't
+	// kept from run to run, so the interval is always reset
+	if rowCount == int64(cleanupBatchSize) {
+		c.interval = 1 * time.Minute
 	}
 
 	err = status.SetStatus(0)
