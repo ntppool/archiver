@@ -33,16 +33,16 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 	log := logger.Setup()
 	interval := c.Interval()
 	if next := tooSoon(status.ModifiedOn, interval); !next.IsZero() {
-		log.Debug("Don't run cleaner until %s", next)
+		log.Debug("Don't run cleaner yet", "next", next)
 		return nil
 	}
 
 	log.Info("running cleaner")
 
 	maxDays := c.RetentionDays
-	if maxDays < 3 {
-		log.Warn("retention days set too low (%d), resetting to 3")
-		maxDays = 3
+	if maxDays < 1 {
+		log.Warn("retention days set too low (%d), resetting to 1")
+		maxDays = 1
 	}
 
 	r, err := db.DB.Exec(
