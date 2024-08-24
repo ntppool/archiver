@@ -41,7 +41,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 
 	maxDays := c.RetentionDays
 	if maxDays < 1 {
-		log.Warn("retention days set too low (%d), resetting to 1")
+		log.Warn("retention days set too low, resetting to 1", "setting", maxDays)
 		maxDays = 1
 	}
 
