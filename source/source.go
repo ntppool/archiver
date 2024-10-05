@@ -64,7 +64,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		lastID = s.LogScoreID.Int64
 		// log.Printf("getting count after %d from %s", s.LogScoreID.Int64, source.Table)
 		err := db.DB.Get(&count,
-			fmt.Sprintf(`select count(*) from %s where id > ? and ts != "0000-00-00 00:00:00"`,
+			fmt.Sprintf(`select count(*) from %s where id > ?`,
 				source.Table),
 			s.LogScoreID)
 		if err != nil {
@@ -115,7 +115,6 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 				from %s
 				where
 				  id > ?
-				  and ts != "0000-00-00 00:00:00"
 				order by id
 				limit ?`,
 				fields,
