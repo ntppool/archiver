@@ -36,7 +36,7 @@ func NewArchiver(path string) (storage.FileArchiver, error) {
 
 // BatchSizeMinMaxTime returns the minimum and maximum batch size
 func (a *AvroArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {
-	return 500000, 10000000, time.Hour * 36
+	return 500000, 10000000, time.Hour * 24
 }
 
 // FileName returns the suggested filename for the given logscores
