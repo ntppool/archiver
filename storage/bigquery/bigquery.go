@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -28,7 +27,7 @@ func NewArchiver() (storage.Archiver, error) {
 		return nil, fmt.Errorf("bq_dataset must be set")
 	}
 
-	tempdir, err := ioutil.TempDir("", "bqavro")
+	tempdir, err := os.MkdirTemp("", "bqavro")
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +58,7 @@ func (a *bqArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {
 }
 
 func (a *bqArchiver) Store(logscores []*logscore.LogScore) (int, error) {
-	fh, err := ioutil.TempFile("", "gcsavro-")
+	fh, err := os.CreateTemp("", "gcsavro-")
 	if err != nil {
 		return 0, err
 	}
@@ -70,7 +69,10 @@ func (a *bqArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	fh.Seek(0, 0)
+	_, err = fh.Seek(0, 0)
+	if err != nil {
+		return 0, err
+	}
 
 	err = a.Load(fh)
 	if err != nil {
@@ -95,6 +97,9 @@ func (a *bqArchiver) Load(fh io.ReadWriteCloser) error {
 	ctx := context.Background()
 
 	client, err := bigquery.NewClient(ctx, "ntppool")
+	if err != nil {
+		return err
+	}
 	ds := client.Dataset(a.datasetName)
 	table := ds.Table("log_scores")
 	log.Printf("Table ID: %s", table.FullyQualifiedName())

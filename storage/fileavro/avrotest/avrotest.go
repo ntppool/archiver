@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"go.ntppool.org/archiver/logscore"
 	"go.ntppool.org/archiver/storage/fileavro"
 )
 
 func main() {
-	tempdir, err := ioutil.TempDir("", "avro")
+	tempdir, err := os.MkdirTemp("", "avro")
 	if err != nil {
 		log.Fatalf("tempdir: %s", err)
 	}

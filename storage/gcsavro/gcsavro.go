@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -29,7 +28,7 @@ func NewArchiver() (storage.Archiver, error) {
 		return nil, fmt.Errorf("gc_bucket must be set")
 	}
 
-	tempdir, err := ioutil.TempDir("", "gcsavro")
+	tempdir, err := os.MkdirTemp("", "gcsavro")
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func (a *gcsAvroArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {
 }
 
 func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
-	fh, err := ioutil.TempFile("", "gcsavro-")
+	fh, err := os.CreateTemp("", "gcsavro-")
 	if err != nil {
 		return 0, err
 	}
@@ -69,7 +68,10 @@ func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	fh.Seek(0, 0)
+	_, err = fh.Seek(0, 0)
+	if err != nil {
+		return 0, err
+	}
 
 	fileName := a.fileAvro.(*fileavro.AvroArchiver).FileName(logscores)
 	year := time.Unix(logscores[0].Ts, 0).UTC().Year()

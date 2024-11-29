@@ -36,7 +36,7 @@ func GetArchiveStatus() ([]ArchiveStatus, error) {
 func (status *ArchiveStatus) SetStatus(lastID int64) error {
 	var logScoreID sql.NullInt64
 	if lastID > 0 {
-		logScoreID = sql.NullInt64{lastID, true}
+		logScoreID = sql.NullInt64{Int64: lastID, Valid: true}
 	}
 
 	_, err := db.DB.Exec(
