@@ -15,7 +15,6 @@ var DB *sqlx.DB
 
 // Setup the state database connection
 func Setup(dsn string) error {
-
 	log := logger.Setup()
 
 	dsn = dsn + "?&parseTime=true&loc=UTC"

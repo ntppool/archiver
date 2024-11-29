@@ -8,7 +8,6 @@ import (
 )
 
 func TestStore(t *testing.T) {
-
 	// tempdir, err := ioutil.TempDir("", "avro")
 	// if err != nil {
 	// 	t.Logf("tempdir: %s", err)

@@ -23,7 +23,6 @@ type bqArchiver struct {
 
 // NewArchiver returns an archiver that stores data in avro files in the specified path
 func NewArchiver() (storage.Archiver, error) {
-
 	datasetName := os.Getenv("bq_dataset")
 	if len(datasetName) == 0 {
 		return nil, fmt.Errorf("bq_dataset must be set")
@@ -86,7 +85,6 @@ func (a *bqArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 }
 
 func (a *bqArchiver) Load(fh io.ReadWriteCloser) error {
-
 	tableName := "log_scores"
 
 	log.Printf("Loading into %s.%s", a.datasetName, tableName)

@@ -222,7 +222,6 @@ func (source *Source) Cleanup(status storage.ArchiveStatus) error {
 }
 
 func (source *Source) checkField(field string) (bool, error) {
-
 	type TableStruct struct {
 		Field   string         `db:"Field"`
 		Type    string         `db:"Type"`

@@ -19,8 +19,10 @@ type Cleanup struct {
 	interval      time.Duration
 }
 
-var defaultInterval = 5 * time.Minute
-var cleanupBatchSize = 100000
+var (
+	defaultInterval  = 5 * time.Minute
+	cleanupBatchSize = 100000
+)
 
 func (c *Cleanup) Interval() time.Duration {
 	if c.interval == 0 {

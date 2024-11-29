@@ -18,7 +18,6 @@ type ArchiveStatus struct {
 
 // GetArchiveStatus returns a list of archivers and their status
 func GetArchiveStatus() ([]ArchiveStatus, error) {
-
 	statuses := []ArchiveStatus{}
 
 	err := db.DB.Select(&statuses,
@@ -35,7 +34,6 @@ func GetArchiveStatus() ([]ArchiveStatus, error) {
 
 // SetStatus updates the "last ID" status for the given archiver
 func (status *ArchiveStatus) SetStatus(lastID int64) error {
-
 	var logScoreID sql.NullInt64
 	if lastID > 0 {
 		logScoreID = sql.NullInt64{lastID, true}
@@ -46,7 +44,6 @@ func (status *ArchiveStatus) SetStatus(lastID int64) error {
 			set log_score_id=?, modified_on=NOW() where archiver=?`,
 		logScoreID, status.Archiver,
 	)
-
 	if err != nil {
 		return err
 	}

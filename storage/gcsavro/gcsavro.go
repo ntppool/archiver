@@ -24,7 +24,6 @@ type gcsAvroArchiver struct {
 
 // NewArchiver returns an archiver that stores data in avro files in the specified path
 func NewArchiver() (storage.Archiver, error) {
-
 	bucketName := os.Getenv("gc_bucket")
 	if len(bucketName) == 0 {
 		return nil, fmt.Errorf("gc_bucket must be set")
@@ -89,7 +88,6 @@ func (a *gcsAvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 }
 
 func (a *gcsAvroArchiver) Upload(fh io.ReadWriteCloser, path string) error {
-
 	log.Printf("Uploading to %s/%s", a.bucketName, path)
 
 	ctx := context.Background()

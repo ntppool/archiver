@@ -49,7 +49,6 @@ func (a *AvroArchiver) FileName(logscores []*logscore.LogScore) string {
 
 // Store is for the Archiver interface
 func (a *AvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
-
 	if len(logscores) == 0 {
 		log.Printf("no input data!")
 		return 0, nil
@@ -58,13 +57,12 @@ func (a *AvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	fileName := a.FileName(logscores)
 	fileName = path.Join(a.path, fileName)
 
-	fh, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
+	fh, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		return 0, fmt.Errorf("open file %q: %s", fileName, err)
 	}
 
 	n, err := a.StoreWriter(fh, logscores)
-
 	if err != nil {
 		os.Remove(fileName)
 		return 0, err
@@ -80,7 +78,6 @@ func (a *AvroArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 
 // StoreWriter is like store, but writes to the specified ReadWriter
 func (a *AvroArchiver) StoreWriter(fh io.ReadWriter, logscores []*logscore.LogScore) (int, error) {
-
 	log.Println("Running Avro File batcher")
 
 	codec, err := goavro.NewCodec(`
