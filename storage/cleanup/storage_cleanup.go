@@ -19,7 +19,8 @@ func NewArchiver() (storage.Archiver, error) {
 	return &fakeCleanup{}, nil
 }
 
-// BatchSizeMinMaxTime implements the storage interface,
+// BatchSizeMinMaxTime implements the storage interface, it doesn't
+// get used. The actual interval is in source/cleanup.go
 func (a *fakeCleanup) BatchSizeMinMaxTime() (int, int, time.Duration) {
 	return 0, 0, 10 * time.Minute
 }
