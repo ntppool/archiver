@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"regexp"
+	"time"
 
 	// import the mysql driver
 	_ "github.com/go-sql-driver/mysql"
@@ -17,7 +18,7 @@ var DB *sqlx.DB
 func Setup(dsn string) error {
 	log := logger.Setup()
 
-	dsn = dsn + "?&parseTime=true&loc=UTC"
+	dsn = dsn + "?&parseTime=true&charset=utf8mb4&rejectReadOnly=true&timeout=10s&loc=UTC"
 
 	re := regexp.MustCompile(":.*?@")
 	redacted := re.ReplaceAllString(dsn, ":...@")
@@ -28,6 +29,10 @@ func Setup(dsn string) error {
 	if err != nil {
 		return err
 	}
+	db.SetConnMaxIdleTime(2 * time.Minute)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(10)
 
 	err = db.Ping()
 	if err != nil {
