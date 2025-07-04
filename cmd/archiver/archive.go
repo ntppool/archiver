@@ -71,7 +71,11 @@ func runArchive(table string) error {
 		}
 	}
 
-	source := source.New(table, retentionDays)
+	source, err := source.New(table, retentionDays)
+	if err != nil {
+		return fmt.Errorf("error creating source: %s", err)
+	}
+
 	for _, s := range status {
 
 		if s.Archiver == "cleanup" {

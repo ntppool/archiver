@@ -13,16 +13,29 @@ import (
 	"go.ntppool.org/common/logger"
 )
 
+// validTables defines the allowed table names to prevent SQL injection
+var validTables = map[string]bool{
+	"log_scores":         true,
+	"log_scores_archive": true,
+	"log_scores_test":    true,
+}
+
 type Source struct {
 	Table         string
 	retentionDays int
 }
 
-func New(table string, retentionDays int) *Source {
+func New(table string, retentionDays int) (*Source, error) {
 	if retentionDays == 0 {
 		retentionDays = 14
 	}
-	return &Source{Table: table, retentionDays: retentionDays}
+
+	// Validate table name to prevent SQL injection
+	if !validTables[table] {
+		return nil, fmt.Errorf("invalid table name: %s", table)
+	}
+
+	return &Source{Table: table, retentionDays: retentionDays}, nil
 }
 
 func (source *Source) Process(s storage.ArchiveStatus) error {
@@ -127,6 +140,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			log.Error("select error", "err", err)
 			return err
 		}
+		defer rows.Close() // Ensure rows are closed even if error occurs
 
 		logScores := []*logscore.LogScore{}
 
@@ -179,7 +193,6 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 			logScores = append(logScores, &ls)
 		}
-		rows.Close()
 		if err = rows.Err(); err != nil {
 			return err
 		}

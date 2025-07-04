@@ -81,6 +81,8 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer tx.Rollback() // Ensure transaction is cleaned up on any error
+
 	stmt, err := tx.Prepare(`
 		INSERT INTO log_scores
 			(dt, id, server_id, monitor_id, ts, score, step, offset, rtt, leap, error)

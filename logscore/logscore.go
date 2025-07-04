@@ -28,12 +28,12 @@ type LogScoreMetadata struct {
 }
 
 // JSON returns LogScore in JSON format plus a newline (\n) character
-func (ls *LogScore) JSON() []byte {
+func (ls *LogScore) JSON() ([]byte, error) {
 	b, err := json.Marshal(ls)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return append(b, '\n')
+	return append(b, '\n'), nil
 }
 
 func (m *LogScoreMetadata) Value() (driver.Value, error) {
