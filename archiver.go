@@ -3,8 +3,8 @@ package archiver // import "go.ntppool.org/archiver"
 import (
 	"errors"
 	"fmt"
-	"os"
 
+	"go.ntppool.org/archiver/config"
 	"go.ntppool.org/archiver/storage"
 	"go.ntppool.org/archiver/storage/bigquery"
 	"go.ntppool.org/archiver/storage/cleanup"
@@ -14,17 +14,21 @@ import (
 )
 
 // SetupArchiver returns an Archiver type (mysql, influxdb, bigquery, ...)
-func SetupArchiver(name string, config string) (storage.Archiver, error) {
+func SetupArchiver(name string, configParam string) (storage.Archiver, error) {
 	switch name {
 	// case "mysql":
 	case "influxdb":
 		return nil, errors.New("influxdb support has been removed")
 	case "fileavro":
-		avroPath := os.Getenv("avro_path")
-		if len(avroPath) == 0 {
-			return nil, fmt.Errorf("avro_path env not set for fileavro")
+		// Load config to get avro_path
+		cfg, err := config.LoadGlobalConfig()
+		if err != nil {
+			return nil, fmt.Errorf("loading config: %w", err)
 		}
-		fa, err := fileavro.NewArchiver(avroPath)
+		if len(cfg.Storage.AvroPath) == 0 {
+			return nil, fmt.Errorf("avro_path not set for fileavro")
+		}
+		fa, err := fileavro.NewArchiver(cfg.Storage.AvroPath)
 		if err != nil {
 			return nil, err
 		}

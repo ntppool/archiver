@@ -4,12 +4,48 @@
 
     docker: askbjoernhansen/ntppool-archiver:1.0
 
-## Sorage backends
+## Configuration
 
-- ClickHouse
-- Google BigQuery
-- Avro files
-- Avro files stored in Google Cloud Storage
+The archiver uses environment variables for configuration with built-in validation. Configuration is managed through the Kong library which provides comprehensive validation and error reporting.
+
+### Required Environment Variables
+
+#### MySQL Database Connection
+- `db_host` - MySQL host (e.g., `10.43.173.158`)
+- `db_database` - Database name (e.g., `askntp`)
+- `db_user` - Database username
+- `db_pass` - Database password
+
+### Optional Configuration
+
+#### Database Connection Pool
+- `db_max_idle_conns` - Maximum idle connections (default: 10)
+- `db_max_open_conns` - Maximum open connections (default: 10)
+- `db_max_idle_time` - Maximum idle connection time (default: 2m)
+- `db_max_lifetime` - Maximum connection lifetime (default: 5m)
+- `db_timeout` - Connection timeout (default: 10s)
+
+#### Application Settings
+- `retention_days` - Data retention period in days (default: 15)
+- `app_valid_tables` - Comma-separated list of valid table names (default: `log_scores,log_scores_archive,log_scores_test`)
+
+## Storage Backends
+
+At least one storage backend must be configured. The archiver supports multiple backends running simultaneously.
+
+### ClickHouse
+- `ch_dsn` - ClickHouse connection string (e.g., `tcp://10.43.92.221:9000/askntp?debug=false&compress=lz4`)
+
+### Google BigQuery
+- `bq_dataset` - BigQuery dataset name
+- `GOOGLE_APPLICATION_CREDENTIALS` - Path to service account key file (e.g., `keys/ntpdev-ask.json`)
+
+### Google Cloud Storage (GCS)
+- `gc_bucket` - GCS bucket name for storing Avro files
+- `GOOGLE_APPLICATION_CREDENTIALS` - Path to service account key file
+
+### Local Avro Files
+- `avro_path` - Local directory path for Avro files (e.g., `/tmp/avro-data`)
 
 ## TODO
 

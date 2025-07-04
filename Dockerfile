@@ -1,4 +1,4 @@
-FROM golang:1.23.4-alpine3.21 AS build
+FROM golang:1.24-alpine3.22 AS build
 RUN apk add git
 
 WORKDIR /app
@@ -6,7 +6,7 @@ ADD . /app
 
 RUN go install ./cmd/archiver
 
-FROM alpine:3.21
+FROM alpine:3.22
 RUN apk --no-cache add ca-certificates tzdata zsh jq tmux
 
 RUN addgroup np && adduser -D -G np np

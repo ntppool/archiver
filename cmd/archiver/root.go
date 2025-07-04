@@ -2,58 +2,86 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/alecthomas/kong"
+	"go.ntppool.org/archiver/config"
 )
 
-var cfgFile string
+var globalConfig *config.Config
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
-	Use:     "archiver",
-	Short:   "Archive NTP Pool log scores",
-	Long:    ``,
-	Version: "1.3", // todo: get from build
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+// CLI represents the command line interface
+type CLI struct {
+	Archive ArchiveCmd `cmd:"archive" help:"Archive log scores"`
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// ArchiveCmd represents the archive command
+type ArchiveCmd struct {
+	Table string `short:"t" default:"log_scores" help:"Table to pull data from"`
+}
+
+// Run executes the archive command
+func (cmd *ArchiveCmd) Run() error {
+	return runArchive(cmd.Table, globalConfig)
+}
+
+// Execute parses command line arguments and executes the appropriate command
 func Execute() {
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
+	// Load configuration
+	cfg, err := loadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+	globalConfig = cfg
+
+	// Parse CLI
+	var cli CLI
+	ctx := kong.Parse(&cli,
+		kong.Name("archiver"),
+		kong.Description("Archive NTP Pool log scores"),
+		kong.UsageOnError(),
+		kong.ConfigureHelp(kong.HelpOptions{
+			Compact: true,
+		}),
+		kong.Vars{
+			"version": cfg.App.Version,
+		},
+	)
+
+	// Execute the command
+	err = ctx.Run()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
+// loadConfig loads and validates the configuration
+func loadConfig() (*config.Config, error) {
+	var cfg config.Config
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.archiver.yaml)")
+	// Parse with Kong to get environment variables
+	parser, err := kong.New(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("creating parser: %w", err)
+	}
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Parse empty args to load from environment
+	_, err = parser.Parse([]string{})
+	if err != nil {
+		return nil, fmt.Errorf("parsing config: %w", err)
+	}
+
+	// Post-process and validate
+	if err := cfg.PostProcess(); err != nil {
+		return nil, fmt.Errorf("validating config: %w", err)
+	}
+
+	return &cfg, nil
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+// getGlobalConfig returns the global configuration
+func getGlobalConfig() *config.Config {
+	return globalConfig
 }

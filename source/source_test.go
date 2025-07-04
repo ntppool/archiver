@@ -17,13 +17,13 @@ import (
 
 // mockArchiver implements storage.Archiver interface for testing
 type mockArchiver struct {
-	minSize   int
-	maxSize   int
-	interval  time.Duration
-	stored    [][]*logscore.LogScore
-	storeErr  error
-	closeErr  error
-	storeCnt  int
+	minSize  int
+	maxSize  int
+	interval time.Duration
+	stored   [][]*logscore.LogScore
+	storeErr error
+	closeErr error
+	storeCnt int
 }
 
 func (m *mockArchiver) BatchSizeMinMaxTime() (int, int, time.Duration) {

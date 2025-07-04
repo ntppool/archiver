@@ -60,16 +60,16 @@ func TestStore(t *testing.T) {
 		// Mock the exec call
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(), // dt (time)
-				uint64(123),      // id
-				uint32(20),       // server_id
-				uint32(10),       // monitor_id
-				sqlmock.AnyArg(), // ts (time)
-				float32(15.5),    // score
-				float32(0.1),     // step
-				nil,              // offset (null)
-				nil,              // rtt (null)
-				nil,              // leap (null)
+				sqlmock.AnyArg(),                         // dt (time)
+				uint64(123),                              // id
+				uint32(20),                               // server_id
+				uint32(10),                               // monitor_id
+				sqlmock.AnyArg(),                         // ts (time)
+				float32(15.5),                            // score
+				float32(0.1),                             // step
+				nil,                                      // offset (null)
+				nil,                                      // rtt (null)
+				nil,                                      // leap (null)
 				sql.NullString{String: "", Valid: false}, // error (null)
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
@@ -102,20 +102,20 @@ func TestStore(t *testing.T) {
 
 		offset := 0.05
 		rtt := int64(150)
-		
+
 		// Mock the exec call with all fields populated
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(),                         // dt (time)
-				uint64(124),                              // id
-				uint32(21),                               // server_id
-				uint32(11),                               // monitor_id
-				sqlmock.AnyArg(),                         // ts (time)
-				float32(16.0),                            // score
-				float32(0.2),                             // step
-				&offset,                                  // offset
-				sqlmock.AnyArg(),                         // rtt (uint32 pointer)
-				sqlmock.AnyArg(),                         // leap (uint8 pointer)
+				sqlmock.AnyArg(), // dt (time)
+				uint64(124),      // id
+				uint32(21),       // server_id
+				uint32(11),       // monitor_id
+				sqlmock.AnyArg(), // ts (time)
+				float32(16.0),    // score
+				float32(0.2),     // step
+				&offset,          // offset
+				sqlmock.AnyArg(), // rtt (uint32 pointer)
+				sqlmock.AnyArg(), // leap (uint8 pointer)
 				sql.NullString{String: "test error", Valid: true}, // error
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
@@ -152,16 +152,16 @@ func TestStore(t *testing.T) {
 		// Mock first exec
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(), // dt
-				uint64(125),      // id
-				uint32(22),       // server_id
-				uint32(12),       // monitor_id
-				sqlmock.AnyArg(), // ts
-				float32(17.0),    // score
-				float32(0.3),     // step
-				nil,              // offset
-				nil,              // rtt
-				nil,              // leap
+				sqlmock.AnyArg(),                         // dt
+				uint64(125),                              // id
+				uint32(22),                               // server_id
+				uint32(12),                               // monitor_id
+				sqlmock.AnyArg(),                         // ts
+				float32(17.0),                            // score
+				float32(0.3),                             // step
+				nil,                                      // offset
+				nil,                                      // rtt
+				nil,                                      // leap
 				sql.NullString{String: "", Valid: false}, // error
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
@@ -169,16 +169,16 @@ func TestStore(t *testing.T) {
 		// Mock second exec
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(), // dt
-				uint64(126),      // id
-				uint32(23),       // server_id
-				uint32(13),       // monitor_id
-				sqlmock.AnyArg(), // ts
-				float32(18.0),    // score
-				float32(0.4),     // step
-				nil,              // offset
-				nil,              // rtt
-				nil,              // leap
+				sqlmock.AnyArg(),                         // dt
+				uint64(126),                              // id
+				uint32(23),                               // server_id
+				uint32(13),                               // monitor_id
+				sqlmock.AnyArg(),                         // ts
+				float32(18.0),                            // score
+				float32(0.4),                             // step
+				nil,                                      // offset
+				nil,                                      // rtt
+				nil,                                      // leap
 				sql.NullString{String: "", Valid: false}, // error
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))

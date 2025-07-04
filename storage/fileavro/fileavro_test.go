@@ -126,7 +126,7 @@ func TestStoreWriter(t *testing.T) {
 
 	t.Run("single logscore", func(t *testing.T) {
 		var buf bytes.Buffer
-		
+
 		offset := 0.05
 		rtt := int64(150)
 		logscores := []*logscore.LogScore{
@@ -154,7 +154,7 @@ func TestStoreWriter(t *testing.T) {
 
 	t.Run("multiple logscores", func(t *testing.T) {
 		var buf bytes.Buffer
-		
+
 		logscores := []*logscore.LogScore{
 			{
 				ID:        123,
@@ -188,7 +188,7 @@ func TestStoreWriter(t *testing.T) {
 
 	t.Run("logscores with null values", func(t *testing.T) {
 		var buf bytes.Buffer
-		
+
 		logscores := []*logscore.LogScore{
 			{
 				ID:        123,
@@ -197,8 +197,8 @@ func TestStoreWriter(t *testing.T) {
 				Ts:        1640995200,
 				Score:     15.5,
 				Step:      0.1,
-				Offset:    nil, // null offset
-				RTT:       nil, // null rtt
+				Offset:    nil,                         // null offset
+				RTT:       nil,                         // null rtt
 				Meta:      logscore.LogScoreMetadata{}, // empty meta
 			},
 		}
@@ -215,7 +215,7 @@ func TestStoreWriterBatching(t *testing.T) {
 
 	t.Run("large batch exceeds batchAppendSize", func(t *testing.T) {
 		var buf bytes.Buffer
-		
+
 		// Create more than batchAppendSize (50000) records
 		logscores := make([]*logscore.LogScore, batchAppendSize+10)
 		for i := range logscores {

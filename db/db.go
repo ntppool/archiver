@@ -3,11 +3,11 @@ package db
 import (
 	"fmt"
 	"regexp"
-	"time"
 
 	// import the mysql driver
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"go.ntppool.org/archiver/config"
 	"go.ntppool.org/common/logger"
 )
 
@@ -18,8 +18,6 @@ var DB *sqlx.DB
 func Setup(dsn string) error {
 	log := logger.Setup()
 
-	dsn = dsn + "?&parseTime=true&charset=utf8mb4&rejectReadOnly=true&timeout=10s&loc=UTC"
-
 	re := regexp.MustCompile(":.*?@")
 	redacted := re.ReplaceAllString(dsn, ":...@")
 
@@ -29,10 +27,32 @@ func Setup(dsn string) error {
 	if err != nil {
 		return err
 	}
-	db.SetConnMaxIdleTime(2 * time.Minute)
-	db.SetConnMaxLifetime(5 * time.Minute)
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(10)
+
+	DB = db
+
+	return nil
+}
+
+// SetupWithConfig configures the database connection using the provided config
+func SetupWithConfig(cfg *config.Config) error {
+	log := logger.Setup()
+
+	dsn := cfg.GetMySQLDSN()
+	re := regexp.MustCompile(":.*?@")
+	redacted := re.ReplaceAllString(dsn, ":...@")
+
+	log.Debug("db connecting", "dsn", redacted)
+
+	db, err := sqlx.Open("mysql", dsn)
+	if err != nil {
+		return err
+	}
+
+	// Configure connection pool using config values
+	db.SetConnMaxIdleTime(cfg.Database.MaxIdleTime)
+	db.SetConnMaxLifetime(cfg.Database.MaxLifetime)
+	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
 
 	err = db.Ping()
 	if err != nil {
