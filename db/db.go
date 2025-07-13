@@ -3,16 +3,14 @@ package db
 import (
 	"context"
 	"fmt"
-
-	"go.ntppool.org/archiver/config"
 )
 
 // Pool is the global connection pool
 var Pool ConnectionPool
 
-// SetupWithConfig configures the database connection pool using the provided config
-func SetupWithConfig(cfg *config.Config) error {
-	pool, err := NewPool(cfg)
+// Setup configures the database connection pool using file-based configuration
+func Setup() error {
+	pool, err := NewPool()
 	if err != nil {
 		return fmt.Errorf("creating connection pool: %w", err)
 	}

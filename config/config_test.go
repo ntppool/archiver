@@ -12,17 +12,9 @@ import (
 
 func TestKongConfig(t *testing.T) {
 	// Set up minimal required environment variables
-	os.Setenv("db_host", "localhost")
-	os.Setenv("db_database", "testdb")
-	os.Setenv("db_user", "testuser")
-	os.Setenv("db_pass", "testpass")
 	os.Setenv("avro_path", "/tmp/test")
 
 	defer func() {
-		os.Unsetenv("db_host")
-		os.Unsetenv("db_database")
-		os.Unsetenv("db_user")
-		os.Unsetenv("db_pass")
 		os.Unsetenv("avro_path")
 	}()
 
@@ -38,24 +30,8 @@ func TestKongConfig(t *testing.T) {
 	err = cfg.PostProcess()
 	require.NoError(t, err)
 
-	// Test database configuration
-	assert.Equal(t, "localhost", cfg.Database.Host)
-	assert.Equal(t, "testdb", cfg.Database.Database)
-	assert.Equal(t, "testuser", cfg.Database.User)
-	assert.Equal(t, "testpass", cfg.Database.Password)
-
-	// Test defaults
-	assert.Equal(t, "utf8mb4", cfg.Database.Charset)
-	assert.Equal(t, "UTC", cfg.Database.TimeZone)
-	assert.Equal(t, 10*time.Second, cfg.Database.Timeout)
-	assert.Equal(t, 2*time.Minute, cfg.Database.MaxIdleTime)
-	assert.Equal(t, 5*time.Minute, cfg.Database.MaxLifetime)
-	assert.Equal(t, 10, cfg.Database.MaxIdleConns)
-	assert.Equal(t, 10, cfg.Database.MaxOpenConns)
-	assert.Equal(t, "archiver-", cfg.Database.LockNamePrefix)
-	assert.Equal(t, 0, cfg.Database.LockTimeout)
-	assert.True(t, cfg.Database.ParseTime)
-	assert.True(t, cfg.Database.RejectReadOnly)
+	// Database configuration is now handled by go.ntppool.org/common/database
+	// and read from database.yaml or DATABASE_DSN environment variable
 
 	// Test storage configuration
 	assert.Equal(t, "/tmp/test", cfg.Storage.AvroPath)
@@ -100,12 +76,6 @@ func TestValidate(t *testing.T) {
 		{
 			name: "valid config",
 			config: &Config{
-				Database: Database{
-					Host:     "localhost",
-					Database: "testdb",
-					User:     "testuser",
-					Password: "testpass",
-				},
 				Storage: Storage{
 					AvroPath: "/tmp/test",
 				},
@@ -128,12 +98,6 @@ func TestValidate(t *testing.T) {
 		{
 			name: "no storage backend",
 			config: &Config{
-				Database: Database{
-					Host:     "localhost",
-					Database: "testdb",
-					User:     "testuser",
-					Password: "testpass",
-				},
 				Storage: Storage{},
 				App: App{
 					DefaultTable:  "log_scores",
@@ -155,12 +119,6 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid retention days",
 			config: &Config{
-				Database: Database{
-					Host:     "localhost",
-					Database: "testdb",
-					User:     "testuser",
-					Password: "testpass",
-				},
 				Storage: Storage{
 					AvroPath: "/tmp/test",
 				},
@@ -184,12 +142,6 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid batch size",
 			config: &Config{
-				Database: Database{
-					Host:     "localhost",
-					Database: "testdb",
-					User:     "testuser",
-					Password: "testpass",
-				},
 				Storage: Storage{
 					AvroPath: "/tmp/test",
 				},
@@ -225,25 +177,6 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-func TestGetMySQLDSN(t *testing.T) {
-	cfg := &Config{
-		Database: Database{
-			Host:           "localhost",
-			Database:       "testdb",
-			User:           "testuser",
-			Password:       "testpass",
-			Charset:        "utf8mb4",
-			TimeZone:       "UTC",
-			Timeout:        10 * time.Second,
-			ParseTime:      true,
-			RejectReadOnly: true,
-		},
-	}
-
-	dsn := cfg.GetMySQLDSN()
-	expected := "testuser:testpass@tcp(localhost)/testdb?parseTime=true&charset=utf8mb4&rejectReadOnly=true&timeout=10s&loc=UTC"
-	assert.Equal(t, expected, dsn)
-}
 
 func TestIsValidTable(t *testing.T) {
 	cfg := &Config{
@@ -260,11 +193,7 @@ func TestIsValidTable(t *testing.T) {
 }
 
 func TestGetLockName(t *testing.T) {
-	cfg := &Config{
-		Database: Database{
-			LockNamePrefix: "archiver-",
-		},
-	}
+	cfg := &Config{}
 
 	assert.Equal(t, "archiver-log_scores", cfg.GetLockName("log_scores"))
 	assert.Equal(t, "archiver-test", cfg.GetLockName("test"))
@@ -272,12 +201,6 @@ func TestGetLockName(t *testing.T) {
 
 func TestPostProcess(t *testing.T) {
 	cfg := &Config{
-		Database: Database{
-			Host:     "localhost",
-			Database: "testdb",
-			User:     "testuser",
-			Password: "testpass",
-		},
 		Storage: Storage{
 			AvroPath: "/tmp/test",
 		},

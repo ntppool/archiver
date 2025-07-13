@@ -10,9 +10,6 @@ import (
 
 // Config holds all configuration for the archiver
 type Config struct {
-	// Database configuration
-	Database Database `embed:"" group:"Database Configuration:"`
-
 	// Storage configuration
 	Storage Storage `embed:"" group:"Storage Configuration:"`
 
@@ -26,24 +23,6 @@ type Config struct {
 	Cleanup Cleanup `embed:"" group:"Cleanup Configuration:"`
 }
 
-// Database configuration
-type Database struct {
-	Host           string        `env:"db_host" required:"" help:"Database host"`
-	Database       string        `env:"db_database" required:"" help:"Database name"`
-	User           string        `env:"db_user" required:"" help:"Database username"`
-	Password       string        `env:"db_pass" required:"" help:"Database password"`
-	Charset        string        `env:"db_charset" default:"utf8mb4" help:"Database charset"`
-	TimeZone       string        `env:"db_timezone" default:"UTC" help:"Database timezone"`
-	Timeout        time.Duration `env:"db_timeout" default:"10s" help:"Database connection timeout"`
-	MaxIdleTime    time.Duration `env:"db_max_idle_time" default:"2m" help:"Database max idle connection time"`
-	MaxLifetime    time.Duration `env:"db_max_lifetime" default:"5m" help:"Database max connection lifetime"`
-	MaxIdleConns   int           `env:"db_max_idle_conns" default:"10" help:"Database max idle connections"`
-	MaxOpenConns   int           `env:"db_max_open_conns" default:"10" help:"Database max open connections"`
-	LockNamePrefix string        `env:"db_lock_prefix" default:"archiver-" help:"Database lock name prefix"`
-	LockTimeout    int           `env:"db_lock_timeout" default:"0" help:"Database lock timeout"`
-	ParseTime      bool          `env:"db_parse_time" default:"true" help:"Parse time in database queries"`
-	RejectReadOnly bool          `env:"db_reject_readonly" default:"true" help:"Reject read-only database connections"`
-}
 
 // Storage configuration for all backends
 type Storage struct {
@@ -162,23 +141,6 @@ func (c *Config) PostProcess() error {
 	return c.Validate()
 }
 
-// GetMySQLDSN returns the MySQL connection string
-func (c *Config) GetMySQLDSN() string {
-	params := fmt.Sprintf("parseTime=%t&charset=%s&rejectReadOnly=%t&timeout=%s&loc=%s",
-		c.Database.ParseTime,
-		c.Database.Charset,
-		c.Database.RejectReadOnly,
-		c.Database.Timeout,
-		c.Database.TimeZone,
-	)
-	return fmt.Sprintf("%s:%s@tcp(%s)/%s?%s",
-		c.Database.User,
-		c.Database.Password,
-		c.Database.Host,
-		c.Database.Database,
-		params,
-	)
-}
 
 // IsValidTable checks if a table name is in the valid tables list
 func (c *Config) IsValidTable(table string) bool {
@@ -192,7 +154,7 @@ func (c *Config) IsValidTable(table string) bool {
 
 // GetLockName returns the lock name for a given table
 func (c *Config) GetLockName(table string) string {
-	return c.Database.LockNamePrefix + table
+	return "archiver-" + table
 }
 
 // LoadGlobalConfig loads the configuration from environment variables

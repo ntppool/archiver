@@ -5,12 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"os"
 	"sync"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.ntppool.org/archiver/config"
 	"go.ntppool.org/common/database"
 	"go.ntppool.org/common/logger"
 )
@@ -24,21 +23,19 @@ type ConnectionPool interface {
 	Begin(ctx context.Context) (*sql.Tx, error)
 	Ping(ctx context.Context) error
 	Close() error
-	UpdateConfig(cfg *config.Config) error
+	UpdateConfig() error
 }
 
 // DatabasePool implements ConnectionPool using go.ntppool.org/common/database
 type DatabasePool struct {
 	mu     sync.RWMutex
 	db     *sqlx.DB
-	config *config.Config
 	logger *slog.Logger
 }
 
-// NewPool creates a new connection pool
-func NewPool(cfg *config.Config) (*DatabasePool, error) {
+// NewPool creates a new connection pool using common database package configuration
+func NewPool() (*DatabasePool, error) {
 	p := &DatabasePool{
-		config: cfg,
 		logger: logger.Setup(),
 	}
 
@@ -51,18 +48,14 @@ func NewPool(cfg *config.Config) (*DatabasePool, error) {
 
 // connect establishes the database connection using common/database
 func (p *DatabasePool) connect() error {
-	// Set DSN in environment variable for common database package
-	dsn := p.config.GetMySQLDSN()
-	os.Setenv("DATABASE_DSN", dsn)
-
-	// Configure connection options with Prometheus metrics enabled
+	// Configure connection options optimized for archiver
 	options := database.ConfigOptions{
-		ConfigFiles:          []string{}, // No config files, use env var
+		ConfigFiles:          []string{"database.yaml", "/vault/secrets/database.yaml"},
 		EnablePoolMonitoring: true,
 		PrometheusRegisterer: prometheus.DefaultRegisterer,
-		MaxOpenConns:         p.config.Database.MaxOpenConns,
-		MaxIdleConns:         p.config.Database.MaxIdleConns,
-		ConnMaxLifetime:      p.config.Database.MaxLifetime,
+		MaxOpenConns:         25,
+		MaxIdleConns:         10,
+		ConnMaxLifetime:      3 * time.Minute,
 	}
 
 	// Open database connection using common package
@@ -142,8 +135,8 @@ func (p *DatabasePool) Close() error {
 	return nil
 }
 
-// UpdateConfig dynamically updates the database configuration
-func (p *DatabasePool) UpdateConfig(cfg *config.Config) error {
+// UpdateConfig dynamically updates the database configuration by reconnecting
+func (p *DatabasePool) UpdateConfig() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -154,10 +147,7 @@ func (p *DatabasePool) UpdateConfig(cfg *config.Config) error {
 		}
 	}
 
-	// Update config
-	p.config = cfg
-
-	// Reconnect with new configuration
+	// Reconnect with new configuration (re-reads config file)
 	if err := p.connect(); err != nil {
 		return fmt.Errorf("reconnecting with new config: %w", err)
 	}

@@ -18,7 +18,7 @@ func runArchive(table string, cfg *config.Config) error {
 		return fmt.Errorf("invalid table name '%s', must be one of: %v", table, cfg.App.ValidTables)
 	}
 
-	err := db.SetupWithConfig(cfg)
+	err := db.Setup()
 	if err != nil {
 		return fmt.Errorf("database connection: %s", err)
 	}
@@ -28,7 +28,7 @@ func runArchive(table string, cfg *config.Config) error {
 	}
 
 	// todo: make this be a goroutine that waits for a signal to release the lock
-	lock := getLock(cfg.GetLockName(cfg.Database.Database))
+	lock := getLock(cfg.GetLockName(table))
 	if !lock {
 		return fmt.Errorf("did not get lock, exiting")
 	}

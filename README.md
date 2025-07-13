@@ -15,26 +15,38 @@ The archiver uses a **connection pool architecture** with dynamic configuration 
 
 ## Configuration
 
-The archiver uses environment variables for configuration with built-in validation. Configuration is managed through the Kong library which provides comprehensive validation and error reporting.
+The archiver uses **file-based configuration** for database settings and environment variables for application settings. Configuration is managed through the Kong library with built-in validation.
 
-### Required Environment Variables
+### Database Configuration
 
-#### MySQL Database Connection
-- `db_host` - MySQL host (e.g., `10.43.173.158`)
-- `db_database` - Database name (e.g., `askntp`)
-- `db_user` - Database username
-- `db_pass` - Database password
+The archiver uses `go.ntppool.org/common/database` for database configuration. Database settings are read from:
 
-### Optional Configuration
+1. **Primary**: `database.yaml` (current directory)
+2. **Secondary**: `/vault/secrets/database.yaml` (Kubernetes secrets)
+3. **Fallback**: `DATABASE_DSN` environment variable
 
-#### Database Connection Pool
-- `db_max_idle_conns` - Maximum idle connections (default: 10)
-- `db_max_open_conns` - Maximum open connections (default: 10)
-- `db_max_idle_time` - Maximum idle connection time (default: 2m)
-- `db_max_lifetime` - Maximum connection lifetime (default: 5m)
-- `db_timeout` - Connection timeout (default: 10s)
+#### database.yaml Example
+```yaml
+mysql:
+  dsn: "user:password@tcp(host:port)/database?parseTime=true&charset=utf8mb4"
+  user: "optional_user_override"
+  pass: "optional_password_override"
+  dbname: "optional_database_override"
+```
 
-**Dynamic Configuration**: The connection pool supports runtime configuration updates through the `UpdateConfig()` method, allowing database parameters to be changed without service restart.
+#### Environment Variable Fallback
+If no `database.yaml` file is found, set:
+```bash
+export DATABASE_DSN="user:password@tcp(host:port)/database?parseTime=true&charset=utf8mb4"
+```
+
+#### Connection Pool Settings
+- **Max Open Connections**: 25
+- **Max Idle Connections**: 10
+- **Connection Lifetime**: 3 minutes
+- **Prometheus Metrics**: Enabled by default
+
+**Dynamic Configuration**: The connection pool supports runtime configuration updates through the `UpdateConfig()` method by re-reading configuration files.
 
 #### Application Settings
 - `retention_days` - Data retention period in days (default: 15)
