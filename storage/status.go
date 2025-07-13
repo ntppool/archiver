@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -17,10 +18,10 @@ type ArchiveStatus struct {
 }
 
 // GetArchiveStatus returns a list of archivers and their status
-func GetArchiveStatus() ([]ArchiveStatus, error) {
+func GetArchiveStatus(ctx context.Context) ([]ArchiveStatus, error) {
 	statuses := []ArchiveStatus{}
 
-	err := db.DB.Select(&statuses,
+	err := db.Pool.Select(ctx, &statuses,
 		`select id, archiver, log_score_id, modified_on
 		from log_scores_archive_status
 		order by log_score_id, modified_on`,
@@ -33,13 +34,13 @@ func GetArchiveStatus() ([]ArchiveStatus, error) {
 }
 
 // SetStatus updates the "last ID" status for the given archiver
-func (status *ArchiveStatus) SetStatus(lastID int64) error {
+func (status *ArchiveStatus) SetStatus(ctx context.Context, lastID int64) error {
 	var logScoreID sql.NullInt64
 	if lastID > 0 {
 		logScoreID = sql.NullInt64{Int64: lastID, Valid: true}
 	}
 
-	_, err := db.DB.Exec(
+	_, err := db.Pool.Exec(ctx,
 		`update log_scores_archive_status
 			set log_score_id=?, modified_on=NOW() where archiver=?`,
 		logScoreID, status.Archiver,

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -11,6 +12,7 @@ import (
 )
 
 func runArchive(table string, cfg *config.Config) error {
+	ctx := context.Background()
 	// Validate table name
 	if !cfg.IsValidTable(table) {
 		return fmt.Errorf("invalid table name '%s', must be one of: %v", table, cfg.App.ValidTables)
@@ -21,7 +23,7 @@ func runArchive(table string, cfg *config.Config) error {
 		return fmt.Errorf("database connection: %s", err)
 	}
 
-	if err = db.DB.Ping(); err != nil {
+	if err = db.Ping(ctx); err != nil {
 		log.Fatalf("Could not connect to database: %s", err)
 	}
 
@@ -31,7 +33,7 @@ func runArchive(table string, cfg *config.Config) error {
 		return fmt.Errorf("did not get lock, exiting")
 	}
 
-	status, err := storage.GetArchiveStatus()
+	status, err := storage.GetArchiveStatus(ctx)
 	if err != nil {
 		return fmt.Errorf("archive status: %s", err)
 	}
@@ -44,14 +46,14 @@ func runArchive(table string, cfg *config.Config) error {
 	for _, s := range status {
 
 		if s.Archiver == "cleanup" {
-			err = source.Cleanup(s)
+			err = source.Cleanup(ctx, s)
 			if err != nil {
 				log.Printf("error running cleanup: %s", err)
 			}
 			continue
 		}
 
-		err := source.Process(s)
+		err := source.Process(ctx, s)
 		if err != nil {
 			return fmt.Errorf("error processing %s: %s", s.Archiver, err)
 		}

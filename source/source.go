@@ -1,6 +1,7 @@
 package source
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -38,7 +39,7 @@ func New(table string, retentionDays int) (*Source, error) {
 	return &Source{Table: table, retentionDays: retentionDays}, nil
 }
 
-func (source *Source) Process(s storage.ArchiveStatus) error {
+func (source *Source) Process(ctx context.Context, s storage.ArchiveStatus) error {
 	log := logger.Setup()
 	arch, err := archiver.SetupArchiver(s.Archiver, "")
 	if err != nil || arch == nil {
@@ -61,12 +62,12 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 	lastID := int64(0)
 
-	hasAttributes, err := source.checkField("attributes")
+	hasAttributes, err := source.checkField(ctx, "attributes")
 	if err != nil {
 		return err
 	}
 
-	hasRTT, err := source.checkField("rtt")
+	hasRTT, err := source.checkField(ctx, "rtt")
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	if s.LogScoreID.Valid && s.LogScoreID.Int64 > 0 {
 		lastID = s.LogScoreID.Int64
 		// log.Printf("getting count after %d from %s", s.LogScoreID.Int64, source.Table)
-		err := db.DB.Get(&count,
+		err := db.Pool.Get(ctx, &count,
 			fmt.Sprintf(`select count(*) from %s where id > ?`,
 				source.Table),
 			s.LogScoreID)
@@ -86,7 +87,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 		}
 	} else {
 		log.Debug("getting full count", "table", source.Table)
-		err := db.DB.Get(&count,
+		err := db.Pool.Get(ctx, &count,
 			fmt.Sprintf("select count(*) from %s", source.Table),
 		)
 		if err != nil {
@@ -122,7 +123,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 			fields = fields + ",rtt"
 		}
 
-		rows, err := db.DB.Query(
+		rows, err := db.Pool.Query(ctx,
 			fmt.Sprintf(
 				`select %s
 				from %s
@@ -213,7 +214,7 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 
 		newLastID := logScores[len(logScores)-1].ID
 		// log.Printf("Setting new Last ID to %d (was %d)", newLastID, lastID)
-		err = s.SetStatus(newLastID)
+		err = s.SetStatus(ctx, newLastID)
 		if err != nil {
 			return fmt.Errorf("could not update archiver status for %q to %d: %s",
 				s.Archiver, newLastID, err)
@@ -227,14 +228,14 @@ func (source *Source) Process(s storage.ArchiveStatus) error {
 	return nil
 }
 
-func (source *Source) Cleanup(status storage.ArchiveStatus) error {
+func (source *Source) Cleanup(ctx context.Context, status storage.ArchiveStatus) error {
 	c := &Cleanup{
 		RetentionDays: source.retentionDays,
 	}
-	return c.Run(source, status)
+	return c.Run(ctx, source, status)
 }
 
-func (source *Source) checkField(field string) (bool, error) {
+func (source *Source) checkField(ctx context.Context, field string) (bool, error) {
 	type TableStruct struct {
 		Field   string         `db:"Field"`
 		Type    string         `db:"Type"`
@@ -246,7 +247,7 @@ func (source *Source) checkField(field string) (bool, error) {
 
 	columns := []TableStruct{}
 
-	err := db.DB.Select(&columns, fmt.Sprintf("DESCRIBE %s", source.Table))
+	err := db.Pool.Select(ctx, &columns, fmt.Sprintf("DESCRIBE %s", source.Table))
 	if err != nil {
 		return false, fmt.Errorf("describe error: %s", err)
 	}

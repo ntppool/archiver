@@ -1,65 +1,35 @@
 package db
 
 import (
+	"context"
 	"fmt"
-	"regexp"
 
-	// import the mysql driver
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"go.ntppool.org/archiver/config"
-	"go.ntppool.org/common/logger"
 )
 
-// DB is the state database
-var DB *sqlx.DB
+// Pool is the global connection pool
+var Pool ConnectionPool
 
-// Setup the state database connection
-func Setup(dsn string) error {
-	log := logger.Setup()
-
-	re := regexp.MustCompile(":.*?@")
-	redacted := re.ReplaceAllString(dsn, ":...@")
-
-	log.Debug("db connecting", "dsn", redacted)
-
-	db, err := sqlx.Open("mysql", dsn)
+// SetupWithConfig configures the database connection pool using the provided config
+func SetupWithConfig(cfg *config.Config) error {
+	pool, err := NewPool(cfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating connection pool: %w", err)
 	}
 
-	DB = db
-
+	Pool = pool
 	return nil
 }
 
-// SetupWithConfig configures the database connection using the provided config
-func SetupWithConfig(cfg *config.Config) error {
-	log := logger.Setup()
+// GetPool returns the global connection pool
+func GetPool() ConnectionPool {
+	return Pool
+}
 
-	dsn := cfg.GetMySQLDSN()
-	re := regexp.MustCompile(":.*?@")
-	redacted := re.ReplaceAllString(dsn, ":...@")
-
-	log.Debug("db connecting", "dsn", redacted)
-
-	db, err := sqlx.Open("mysql", dsn)
-	if err != nil {
-		return err
+// Ping verifies the database connection is alive
+func Ping(ctx context.Context) error {
+	if Pool == nil {
+		return fmt.Errorf("database pool not initialized")
 	}
-
-	// Configure connection pool using config values
-	db.SetConnMaxIdleTime(cfg.Database.MaxIdleTime)
-	db.SetConnMaxLifetime(cfg.Database.MaxLifetime)
-	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
-	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
-
-	err = db.Ping()
-	if err != nil {
-		return fmt.Errorf("ping: %s", err)
-	}
-
-	DB = db
-
-	return nil
+	return Pool.Ping(ctx)
 }

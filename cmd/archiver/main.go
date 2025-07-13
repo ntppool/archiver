@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"go.ntppool.org/archiver/db"
@@ -13,7 +14,7 @@ func main() {
 func getLock(name string) bool {
 	// todo: replace with etcd leader
 	var lock int
-	err := db.DB.Get(&lock, `SELECT GET_LOCK(?, 0)`, name)
+	err := db.Pool.Get(context.Background(), &lock, `SELECT GET_LOCK(?, 0)`, name)
 	if err != nil {
 		log.Fatalf("lock: %s", err)
 	}

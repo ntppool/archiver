@@ -4,6 +4,15 @@
 
     docker: askbjoernhansen/ntppool-archiver:1.0
 
+## Architecture
+
+The archiver uses a **connection pool architecture** with dynamic configuration support through `go.ntppool.org/common/database`. This provides:
+
+- **Dynamic configuration** - Runtime database parameter changes without restart
+- **Connection pooling** - Efficient connection management with health monitoring
+- **Prometheus metrics** - Built-in monitoring of connection pool utilization
+- **Context-aware operations** - Proper cancellation and timeout handling
+
 ## Configuration
 
 The archiver uses environment variables for configuration with built-in validation. Configuration is managed through the Kong library which provides comprehensive validation and error reporting.
@@ -25,9 +34,21 @@ The archiver uses environment variables for configuration with built-in validati
 - `db_max_lifetime` - Maximum connection lifetime (default: 5m)
 - `db_timeout` - Connection timeout (default: 10s)
 
+**Dynamic Configuration**: The connection pool supports runtime configuration updates through the `UpdateConfig()` method, allowing database parameters to be changed without service restart.
+
 #### Application Settings
 - `retention_days` - Data retention period in days (default: 15)
 - `app_valid_tables` - Comma-separated list of valid table names (default: `log_scores,log_scores_archive,log_scores_test`)
+
+## Monitoring
+
+The archiver includes built-in Prometheus metrics for monitoring:
+
+- **Connection pool metrics** - Open, idle, and in-use connections
+- **Query performance** - Connection wait times and durations  
+- **Health monitoring** - Database connectivity status
+
+Metrics are automatically registered with `prometheus.DefaultRegisterer` when the connection pool is initialized.
 
 ## Storage Backends
 

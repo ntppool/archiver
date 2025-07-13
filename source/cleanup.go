@@ -1,6 +1,7 @@
 package source
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 
 type Cleaner interface {
 	Interval() time.Duration
-	Run(*Source, storage.ArchiveStatus)
+	Run(context.Context, *Source, storage.ArchiveStatus) error
 }
 
 type Cleanup struct {
@@ -31,7 +32,7 @@ func (c *Cleanup) Interval() time.Duration {
 	return c.interval
 }
 
-func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
+func (c *Cleanup) Run(ctx context.Context, source *Source, status storage.ArchiveStatus) error {
 	log := logger.Setup()
 	interval := c.Interval()
 	if next := tooSoon(status.ModifiedOn, interval); !next.IsZero() {
@@ -47,7 +48,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 		maxDays = 1
 	}
 
-	r, err := db.DB.Exec(
+	r, err := db.Pool.Exec(ctx,
 		`delete
 		from log_scores
 		where
@@ -73,7 +74,7 @@ func (c *Cleanup) Run(source *Source, status storage.ArchiveStatus) error {
 		c.interval = 1 * time.Minute
 	}
 
-	err = status.SetStatus(0)
+	err = status.SetStatus(ctx, 0)
 	if err != nil {
 		return fmt.Errorf("could not update archiver status for %q : %s", status.Archiver, err)
 	}
