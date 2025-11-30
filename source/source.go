@@ -115,7 +115,7 @@ func (source *Source) Process(ctx context.Context, s storage.ArchiveStatus) erro
 		// 	maxSize, source.Table, lastID,
 		// )
 
-		fields := `id,monitor_id,server_id,EXTRACT(EPOCH FROM ts)::bigint,score,step,offset`
+		fields := `id,monitor_id,server_id,EXTRACT(EPOCH FROM ts)::bigint,score,step,"offset"`
 		if hasAttributes {
 			fields = fields + ",attributes"
 		}
