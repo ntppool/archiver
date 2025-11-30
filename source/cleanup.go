@@ -49,24 +49,22 @@ func (c *Cleanup) Run(ctx context.Context, source *Source, status storage.Archiv
 	}
 
 	r, err := db.Pool.Exec(ctx,
-		`delete
-		from log_scores
-		where
-		  ts < date_sub(now(), interval ? day)
-		  and id < (select min(log_score_id) from log_scores_archive_status)
-		order by id
-		limit ?`,
+		`DELETE FROM log_scores
+		WHERE id IN (
+			SELECT id FROM log_scores
+			WHERE ts < NOW() - INTERVAL '1 day' * $1
+			  AND id < (SELECT MIN(log_score_id) FROM log_scores_archive_status)
+			ORDER BY id
+			LIMIT $2
+		)`,
 		maxDays, cleanupBatchSize,
 	)
 	if err != nil {
 		return fmt.Errorf("cleanup error: %s", err)
 	}
 
-	rowCount, err := r.RowsAffected()
+	rowCount := r.RowsAffected()
 	log.Info("cleaned rows", "count", rowCount)
-	if err != nil {
-		return fmt.Errorf("could not get row count: %s", err)
-	}
 
 	// todo: this doesn't do anything because state isn't
 	// kept from run to run, so the interval is always reset

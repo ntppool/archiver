@@ -2,15 +2,15 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"sync"
-	"time"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.ntppool.org/common/database"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"go.ntppool.org/common/database/pgdb"
 	"go.ntppool.org/common/logger"
 )
 
@@ -18,18 +18,18 @@ import (
 type ConnectionPool interface {
 	Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 	Select(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	Begin(ctx context.Context) (*sql.Tx, error)
+	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
+	Exec(ctx context.Context, query string, args ...interface{}) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
 	Ping(ctx context.Context) error
 	Close() error
 	UpdateConfig() error
 }
 
-// DatabasePool implements ConnectionPool using go.ntppool.org/common/database
+// DatabasePool implements ConnectionPool using pgxpool
 type DatabasePool struct {
 	mu     sync.RWMutex
-	db     *sqlx.DB
+	pool   *pgxpool.Pool
 	logger *slog.Logger
 }
 
@@ -46,91 +46,85 @@ func NewPool() (*DatabasePool, error) {
 	return p, nil
 }
 
-// connect establishes the database connection using common/database
+// connect establishes the database connection using common/database/pgdb
 func (p *DatabasePool) connect() error {
-	// Configure connection options optimized for archiver
-	options := database.ConfigOptions{
-		ConfigFiles:          []string{"database.yaml", "/vault/secrets/database.yaml"},
-		EnablePoolMonitoring: true,
-		PrometheusRegisterer: prometheus.DefaultRegisterer,
-		MaxOpenConns:         25,
-		MaxIdleConns:         10,
-		ConnMaxLifetime:      3 * time.Minute,
-	}
+	ctx := context.Background()
 
-	// Open database connection using common package
-	sqlDB, err := database.OpenDB(context.Background(), options)
+	// Use default pool options which read from database.yaml or /vault/secrets/database.yaml
+	options := pgdb.DefaultPoolOptions()
+	options.MaxConns = 25
+	options.MinConns = 2
+
+	pool, err := pgdb.OpenPool(ctx, options)
 	if err != nil {
-		return fmt.Errorf("opening database: %w", err)
+		return fmt.Errorf("opening database pool: %w", err)
 	}
 
-	// Convert *sql.DB to *sqlx.DB
-	p.db = sqlx.NewDb(sqlDB, "mysql")
-
+	p.pool = pool
 	return nil
 }
 
-// Get executes a query that returns a single row
+// Get executes a query that returns a single row and scans it into dest
 func (p *DatabasePool) Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	p.mu.RLock()
-	db := p.db
+	pool := p.pool
 	p.mu.RUnlock()
 
-	return db.GetContext(ctx, dest, query, args...)
+	return pgxscan.Get(ctx, pool, dest, query, args...)
 }
 
-// Select executes a query that returns multiple rows
+// Select executes a query that returns multiple rows and scans them into dest
 func (p *DatabasePool) Select(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	p.mu.RLock()
-	db := p.db
+	pool := p.pool
 	p.mu.RUnlock()
 
-	return db.SelectContext(ctx, dest, query, args...)
+	return pgxscan.Select(ctx, pool, dest, query, args...)
 }
 
 // Query executes a query and returns rows
-func (p *DatabasePool) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (p *DatabasePool) Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error) {
 	p.mu.RLock()
-	db := p.db
+	pool := p.pool
 	p.mu.RUnlock()
 
-	return db.QueryContext(ctx, query, args...)
+	return pool.Query(ctx, query, args...)
 }
 
 // Exec executes a query that doesn't return rows
-func (p *DatabasePool) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (p *DatabasePool) Exec(ctx context.Context, query string, args ...interface{}) (pgconn.CommandTag, error) {
 	p.mu.RLock()
-	db := p.db
+	pool := p.pool
 	p.mu.RUnlock()
 
-	return db.ExecContext(ctx, query, args...)
+	return pool.Exec(ctx, query, args...)
 }
 
 // Begin starts a transaction
-func (p *DatabasePool) Begin(ctx context.Context) (*sql.Tx, error) {
+func (p *DatabasePool) Begin(ctx context.Context) (pgx.Tx, error) {
 	p.mu.RLock()
-	db := p.db
+	pool := p.pool
 	p.mu.RUnlock()
 
-	return db.BeginTx(ctx, nil)
+	return pool.Begin(ctx)
 }
 
 // Ping verifies the database connection is alive
 func (p *DatabasePool) Ping(ctx context.Context) error {
 	p.mu.RLock()
-	db := p.db
+	pool := p.pool
 	p.mu.RUnlock()
 
-	return db.PingContext(ctx)
+	return pool.Ping(ctx)
 }
 
-// Close closes the database connection
+// Close closes the database connection pool
 func (p *DatabasePool) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.db != nil {
-		return p.db.Close()
+	if p.pool != nil {
+		p.pool.Close()
 	}
 	return nil
 }
@@ -141,10 +135,8 @@ func (p *DatabasePool) UpdateConfig() error {
 	defer p.mu.Unlock()
 
 	// Close existing connection
-	if p.db != nil {
-		if err := p.db.Close(); err != nil {
-			p.logger.Warn("error closing existing connection", "err", err)
-		}
+	if p.pool != nil {
+		p.pool.Close()
 	}
 
 	// Reconnect with new configuration (re-reads config file)

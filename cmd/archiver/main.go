@@ -13,13 +13,12 @@ func main() {
 
 func getLock(name string) bool {
 	// todo: replace with etcd leader
-	var lock int
-	err := db.Pool.Get(context.Background(), &lock, `SELECT GET_LOCK(?, 0)`, name)
+	// pg_try_advisory_lock returns true if lock acquired, false otherwise
+	// We use hashtext() to convert the string name to an integer key
+	var acquired bool
+	err := db.Pool.Get(context.Background(), &acquired, `SELECT pg_try_advisory_lock(hashtext($1))`, name)
 	if err != nil {
 		log.Fatalf("lock: %s", err)
 	}
-	if lock == 1 {
-		return true
-	}
-	return false
+	return acquired
 }

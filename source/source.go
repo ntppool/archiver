@@ -2,11 +2,11 @@ package source
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"go.ntppool.org/archiver"
 	"go.ntppool.org/archiver/db"
 	"go.ntppool.org/archiver/logscore"
@@ -78,7 +78,7 @@ func (source *Source) Process(ctx context.Context, s storage.ArchiveStatus) erro
 		lastID = s.LogScoreID.Int64
 		// log.Printf("getting count after %d from %s", s.LogScoreID.Int64, source.Table)
 		err := db.Pool.Get(ctx, &count,
-			fmt.Sprintf(`select count(*) from %s where id > ?`,
+			fmt.Sprintf(`select count(*) from %s where id > $1`,
 				source.Table),
 			s.LogScoreID)
 		if err != nil {
@@ -115,7 +115,7 @@ func (source *Source) Process(ctx context.Context, s storage.ArchiveStatus) erro
 		// 	maxSize, source.Table, lastID,
 		// )
 
-		fields := `id,monitor_id,server_id,UNIX_TIMESTAMP(ts),score,step,offset`
+		fields := `id,monitor_id,server_id,EXTRACT(EPOCH FROM ts)::bigint,score,step,offset`
 		if hasAttributes {
 			fields = fields + ",attributes"
 		}
@@ -128,9 +128,9 @@ func (source *Source) Process(ctx context.Context, s storage.ArchiveStatus) erro
 				`select %s
 				from %s
 				where
-				  id > ?
+				  id > $1
 				order by id
-				limit ?`,
+				limit $2`,
 				fields,
 				source.Table,
 			),
@@ -147,10 +147,10 @@ func (source *Source) Process(ctx context.Context, s storage.ArchiveStatus) erro
 
 		for rows.Next() {
 
-			var monitorID sql.NullInt64
-			var offset sql.NullFloat64
-			var rtt sql.NullInt64
-			var attributes sql.RawBytes
+			var monitorID pgtype.Int8
+			var offset pgtype.Float8
+			var rtt pgtype.Int8
+			var attributes []byte
 
 			ls := logscore.LogScore{}
 
@@ -236,29 +236,23 @@ func (source *Source) Cleanup(ctx context.Context, status storage.ArchiveStatus)
 }
 
 func (source *Source) checkField(ctx context.Context, field string) (bool, error) {
-	type TableStruct struct {
-		Field   string         `db:"Field"`
-		Type    string         `db:"Type"`
-		Null    string         `db:"Null"`
-		Key     string         `db:"Key"`
-		Default sql.NullString `db:"Default"`
-		Extra   string         `db:"Extra"`
-	}
-
-	columns := []TableStruct{}
-
-	err := db.Pool.Select(ctx, &columns, fmt.Sprintf("DESCRIBE %s", source.Table))
+	// Query information_schema to check if column exists in table
+	// Uses current_schema() to respect the connection's search_path
+	var exists bool
+	err := db.Pool.Get(ctx, &exists,
+		`SELECT EXISTS (
+			SELECT 1 FROM information_schema.columns
+			WHERE table_schema = current_schema()
+			  AND table_name = $1
+			  AND column_name = $2
+		)`,
+		source.Table, field,
+	)
 	if err != nil {
-		return false, fmt.Errorf("describe error: %s", err)
+		return false, fmt.Errorf("checking if column %q exists in table %q: %w", field, source.Table, err)
 	}
 
-	for _, c := range columns {
-		if c.Field == field {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return exists, nil
 }
 
 func tooSoon(last time.Time, interval time.Duration) time.Time {
