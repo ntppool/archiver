@@ -5,6 +5,9 @@ set -eu
 wait=${wait-600}
 vault=/vault/secrets/
 
+# Print the current version before starting the loop
+/archiver/archiver version
+
 while `true`; do
     if [ -d $vault ]; then
         for f in $vault/*.env; do

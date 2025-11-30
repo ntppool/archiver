@@ -14,6 +14,7 @@ var globalConfig *config.Config
 // CLI represents the command line interface
 type CLI struct {
 	Archive ArchiveCmd `cmd:"archive" help:"Archive log scores"`
+	Version VersionCmd `cmd:"version" help:"Print version"`
 }
 
 // ArchiveCmd represents the archive command
