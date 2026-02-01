@@ -5,12 +5,15 @@ variables:
   - &go_env
     GOMODCACHE: /go/pkg/mod
     GOCACHE: /go/pkg/cache
+  - &go_volumes
+    - go-pkg:/go/pkg
 
 steps:
   - name: test
     image: golang:1.25
     pull: true
     environment: *go_env
+    volumes: *go_volumes
     commands:
       - go test -v
       - go build
