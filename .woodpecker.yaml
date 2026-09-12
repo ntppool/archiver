@@ -10,7 +10,7 @@ variables:
 
 steps:
   - name: test
-    image: golang:1.25
+    image: golang:1.25.14
     pull: true
     environment: *go_env
     volumes: *go_volumes
@@ -19,14 +19,23 @@ steps:
       - go build
       - go mod vendor
 
-  - name: docker
-    image: harbor.ntppool.org/ntppool/drone-kaniko:main
+  - name: generate-tags
+    image: ghcr.io/abh/woodpecker-docker-tags-plugin:0.2.1-abh
     pull: true
     settings:
-      repo: ntppool/archiver
+      tags: |
+        branch
+        sha
+        edge -v latest
+        semver --auto
+
+  - name: docker
+    image: woodpeckerci/plugin-kaniko:2.3.2
+    pull: true
+    settings:
+      dockerfile: Dockerfile
       registry: harbor.ntppool.org
-      auto_tag: true
-      tags: SHA7,${CI_COMMIT_SOURCE_BRANCH}
+      repo: ntppool/archiver
       cache: true
       username:
         from_secret: harbor_username
