@@ -10,7 +10,7 @@ variables:
 
 steps:
   - name: test
-    image: golang:1.25
+    image: golang:1.25.14
     pull: true
     environment: *go_env
     volumes: *go_volumes
