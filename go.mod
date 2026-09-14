@@ -11,6 +11,7 @@ require (
 	github.com/georgysavva/scany/v2 v2.1.4
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/linkedin/goavro/v2 v2.14.1
+	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.11.1
 	go.ntppool.org/common v0.7.1-0.20251130173555-d43ff0f2a9fb
 )
@@ -73,7 +74,6 @@ require (
 	github.com/samber/slog-common v0.19.0 // indirect
 	github.com/samber/slog-multi v1.6.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect

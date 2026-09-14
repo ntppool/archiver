@@ -1,0 +1,46 @@
+<!--
+  Single-node stand-in for the production "scores" cluster, used by
+  scripts/test-clickhouse-integration.sh. Provides embedded Keeper, the
+  {shard}/{replica} macros and a one-replica "scores" cluster, so the files in
+  schema/ (Replicated database, ReplicatedMergeTree, Distributed) apply
+  verbatim.
+-->
+<clickhouse>
+    <macros>
+        <shard>01</shard>
+        <replica>test-1</replica>
+    </macros>
+
+    <keeper_server>
+        <tcp_port>9181</tcp_port>
+        <server_id>1</server_id>
+        <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
+        <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
+        <raft_configuration>
+            <server>
+                <id>1</id>
+                <hostname>localhost</hostname>
+                <port>9234</port>
+            </server>
+        </raft_configuration>
+    </keeper_server>
+
+    <zookeeper>
+        <node>
+            <host>localhost</host>
+            <port>9181</port>
+        </node>
+    </zookeeper>
+
+    <remote_servers>
+        <scores>
+            <shard>
+                <internal_replication>true</internal_replication>
+                <replica>
+                    <host>localhost</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </scores>
+    </remote_servers>
+</clickhouse>

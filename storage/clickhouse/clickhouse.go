@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/shopspring/decimal"
 
 	"go.ntppool.org/archiver/logscore"
 	"go.ntppool.org/archiver/storage"
@@ -38,28 +40,6 @@ func NewArchiver() (storage.Archiver, error) {
 		return nil, err
 	}
 
-	_, err = connect.Exec(`
-	CREATE TABLE IF NOT EXISTS log_scores (
-		dt          Date,
-		id 		    UInt64,
-		monitor_id  UInt32,
-		server_id   UInt32,
-		ts	        DateTime,
-		score		Float32,
-		step 		Float32,
-		offset 		Nullable(Float64),
-		rtt			Nullable(UInt32),
-		leap 		Nullable(UInt8),
-		warning	    Nullable(String),
-		error       Nullable(String)
-	) engine=MergeTree
-	PARTITION BY dt
-	ORDER BY (server_id, ts)
-`)
-	if err != nil {
-		return nil, err
-	}
-
 	a.connect = connect
 
 	return a, nil
@@ -85,8 +65,8 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 
 	stmt, err := tx.Prepare(`
 		INSERT INTO log_scores
-			(dt, id, server_id, monitor_id, ts, score, step, offset, rtt, leap, error)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+			(server_id, monitor_id, ts, score, step, offset, rtt, leap, error)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return 0, err
 	}
@@ -101,13 +81,14 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 			leap = &l.Meta.Leap
 		}
 
-		var lsError sql.NullString
+		// error is LowCardinality(Nullable(String)); clickhouse-go only
+		// writes NULL there for a nil pointer (sql.NullString becomes "").
+		var lsError *string
 		if len(l.Meta.Error) > 0 {
-			lsError = sql.NullString{String: l.Meta.Error, Valid: true}
+			lsError = &l.Meta.Error
 		}
 
 		ts := time.Unix(l.Ts, 0)
-		id := uint64(l.ID)
 
 		var rtt *uint32
 		if l.RTT != nil {
@@ -115,13 +96,25 @@ func (a *CHArchiver) Store(logscores []*logscore.LogScore) (int, error) {
 			rtt = &urtt
 		}
 
+		// offset is Nullable(Decimal64(7)). clickhouse-go's Decimal column
+		// rejects float64/*float64, and decimal.NewFromFloat panics on NaN/Inf.
+		var offset *decimal.Decimal
+		if l.Offset != nil {
+			v := *l.Offset
+			if math.IsNaN(v) || math.IsInf(v, 0) || math.Abs(v) >= 1e11 {
+				log.Printf("ERROR: offset %v not representable as Decimal64(7), storing NULL (log_scores.id=%d server_id=%d)",
+					v, l.ID, l.ServerID)
+			} else {
+				d := decimal.NewFromFloat(v).Round(7)
+				offset = &d
+			}
+		}
+
 		_, err := stmt.Exec(
-			ts,
-			id,
 			uint32(l.ServerID), uint32(l.MonitorID),
 			ts,
 			float32(l.Score), float32(l.Step),
-			l.Offset, rtt,
+			offset, rtt,
 			leap, lsError,
 		)
 		if err != nil {

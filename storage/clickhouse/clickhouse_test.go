@@ -2,11 +2,13 @@ package clickhouse
 
 import (
 	"database/sql"
+	"math"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.ntppool.org/archiver/logscore"
@@ -60,17 +62,15 @@ func TestStore(t *testing.T) {
 		// Mock the exec call
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(),                         // dt (time)
-				uint64(123),                              // id
-				uint32(20),                               // server_id
-				uint32(10),                               // monitor_id
-				sqlmock.AnyArg(),                         // ts (time)
-				float32(15.5),                            // score
-				float32(0.1),                             // step
-				nil,                                      // offset (null)
-				nil,                                      // rtt (null)
-				nil,                                      // leap (null)
-				sql.NullString{String: "", Valid: false}, // error (null)
+				uint32(20),       // server_id
+				uint32(10),       // monitor_id
+				sqlmock.AnyArg(), // ts (time)
+				float32(15.5),    // score
+				float32(0.1),     // step
+				nil,              // offset (null)
+				nil,              // rtt (null)
+				nil,              // leap (null)
+				nil,              // error (null)
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -106,17 +106,15 @@ func TestStore(t *testing.T) {
 		// Mock the exec call with all fields populated
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(), // dt (time)
-				uint64(124),      // id
-				uint32(21),       // server_id
-				uint32(11),       // monitor_id
-				sqlmock.AnyArg(), // ts (time)
-				float32(16.0),    // score
-				float32(0.2),     // step
-				&offset,          // offset
-				sqlmock.AnyArg(), // rtt (uint32 pointer)
-				sqlmock.AnyArg(), // leap (uint8 pointer)
-				sql.NullString{String: "test error", Valid: true}, // error
+				uint32(21),                        // server_id
+				uint32(11),                        // monitor_id
+				sqlmock.AnyArg(),                  // ts (time)
+				float32(16.0),                     // score
+				float32(0.2),                      // step
+				decimal.RequireFromString("0.05"), // offset
+				sqlmock.AnyArg(),                  // rtt (uint32 pointer)
+				sqlmock.AnyArg(),                  // leap (uint8 pointer)
+				"test error",                      // error
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -152,34 +150,30 @@ func TestStore(t *testing.T) {
 		// Mock first exec
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(),                         // dt
-				uint64(125),                              // id
-				uint32(22),                               // server_id
-				uint32(12),                               // monitor_id
-				sqlmock.AnyArg(),                         // ts
-				float32(17.0),                            // score
-				float32(0.3),                             // step
-				nil,                                      // offset
-				nil,                                      // rtt
-				nil,                                      // leap
-				sql.NullString{String: "", Valid: false}, // error
+				uint32(22),       // server_id
+				uint32(12),       // monitor_id
+				sqlmock.AnyArg(), // ts
+				float32(17.0),    // score
+				float32(0.3),     // step
+				nil,              // offset
+				nil,              // rtt
+				nil,              // leap
+				nil,              // error
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		// Mock second exec
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(
-				sqlmock.AnyArg(),                         // dt
-				uint64(126),                              // id
-				uint32(23),                               // server_id
-				uint32(13),                               // monitor_id
-				sqlmock.AnyArg(),                         // ts
-				float32(18.0),                            // score
-				float32(0.4),                             // step
-				nil,                                      // offset
-				nil,                                      // rtt
-				nil,                                      // leap
-				sql.NullString{String: "", Valid: false}, // error
+				uint32(23),       // server_id
+				uint32(13),       // monitor_id
+				sqlmock.AnyArg(), // ts
+				float32(18.0),    // score
+				float32(0.4),     // step
+				nil,              // offset
+				nil,              // rtt
+				nil,              // leap
+				nil,              // error
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -275,7 +269,7 @@ func TestStoreErrors(t *testing.T) {
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
 				sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-				sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+				sqlmock.AnyArg()).
 			WillReturnError(sql.ErrConnDone)
 
 		mock.ExpectRollback()
@@ -304,7 +298,7 @@ func TestStoreErrors(t *testing.T) {
 		mock.ExpectExec("INSERT INTO log_scores").
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
 				sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-				sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+				sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectCommit().WillReturnError(sql.ErrTxDone)
@@ -453,10 +447,55 @@ func TestDataTypeConversions(t *testing.T) {
 			// Test time conversion
 			ts := time.Unix(tt.logscore.Ts, 0)
 			assert.Equal(t, tt.logscore.Ts, ts.Unix())
+		})
+	}
+}
 
-			// Test ID conversion
-			id := uint64(tt.logscore.ID)
-			assert.Equal(t, tt.logscore.ID, int64(id))
+// TestStoreOffset checks the offset argument Store passes for the
+// Nullable(Decimal64(7)) column. clickhouse_integration_test.go checks what a
+// real server stores.
+func TestStoreOffset(t *testing.T) {
+	f64 := func(v float64) *float64 { return &v }
+
+	tests := []struct {
+		name   string
+		offset *float64
+		want   any // driver value of the offset argument; nil means NULL
+	}{
+		{name: "nil", offset: nil, want: nil},
+		{name: "rounded to 7 decimals", offset: f64(-0.000256838), want: "-0.0002568"},
+		{name: "positive tie rounds away from zero", offset: f64(0.00000015), want: "0.0000002"},
+		{name: "negative tie rounds away from zero", offset: f64(-0.00000015), want: "-0.0000002"},
+		{name: "inside Decimal64(7) range", offset: f64(-9.99e10), want: "-99900000000"},
+		{name: "Decimal64(7) limit", offset: f64(1e11), want: nil},
+		{name: "NaN", offset: f64(math.NaN()), want: nil},
+		{name: "+Inf", offset: f64(math.Inf(1)), want: nil},
+		{name: "-Inf", offset: f64(math.Inf(-1)), want: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			require.NoError(t, err)
+			defer db.Close()
+
+			archiver := &CHArchiver{connect: db}
+
+			mock.ExpectBegin()
+			mock.ExpectPrepare("INSERT INTO log_scores")
+			mock.ExpectExec("INSERT INTO log_scores").
+				WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
+					sqlmock.AnyArg(), tt.want, sqlmock.AnyArg(), sqlmock.AnyArg(),
+					sqlmock.AnyArg()).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.ExpectCommit()
+
+			count, err := archiver.Store([]*logscore.LogScore{
+				{ID: 1, ServerID: 20, MonitorID: 10, Ts: 1640995200, Offset: tt.offset},
+			})
+			require.NoError(t, err)
+			assert.Equal(t, 1, count)
+			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
 }
